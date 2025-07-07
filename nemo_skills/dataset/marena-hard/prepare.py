@@ -32,7 +32,7 @@ def write_data_to_file(output_file, dataset):
 
 
 def main(args):
-    dataset = load_dataset("CohereLabs/m-ArenaHard-v2.0", args.split)["test"]
+    dataset = load_dataset("CohereLabs/m-ArenaHard", args.split)["test"]
     data_dir = Path(__file__).absolute().parent
     data_dir.mkdir(exist_ok=True)
     output_file = data_dir / f"{args.split}.jsonl"
