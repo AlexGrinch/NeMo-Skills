@@ -1,0 +1,48 @@
+# format 1
+# input:
+#    {
+#      "conversations": [
+#        {
+#          "from": "User",
+#          "value": "Print hello world with Python.",
+#          "canonical_form": "",
+#          "label": ""
+#        },
+#        {
+#          "from": "Assistant",
+#          "value": "<think>\nPrint hello world with Python.\n</think>\n\n```python\nprint('hello world')\n```",
+#          "canonical_form": "",
+#          "label": ""
+#        }
+#      ],
+#      "system": "",
+#      "mask": "User"
+#    }
+#
+# formatting constraints:
+#   - translate text inside <think> and </think> tags and put it in a field called "translation_trace"
+#   - translate the text outside <think> and </think> tags and put it in a field called "translation_answer"
+#   - return the translation as a json object
+#   - create a new field "translation" in each of the conversation entries, with "translation_trace" and "translation_answer" as its subfields
+#   - keep all the other fields as-is
+#   - preserve code blocks between ``` tags
+
+system: You are an experienced translator that translates documents accurately into fluent text in target language, while following other formatting instructions in the prompt.
+
+user: |-
+  You need to translate some {source_lang} source text to {target_lang}.
+
+  Please follow these formatting rules:
+
+  (1) For text between <think> and </think> tags: translate it and put it in a field called "translation_trace"
+  (2) For text outside <think> and </think> tags: translate it and put it in a field called "translation_answer"
+  (3) For code blocks between ``` tags: preserve them as-is without translation
+  (4) Return the translation as a json object
+  (5) Create a new field "translation" in each conversation entry, with "translation_trace" and "translation_answer" as its subfields
+  (6) Keep all other fields unchanged
+
+  Source text ({source_lang}):
+
+  ```json
+  {src}
+  ```

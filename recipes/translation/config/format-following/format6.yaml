@@ -1,0 +1,42 @@
+# format 2
+# input:
+#    {
+#      "conversations": [
+#        {
+#          "from": "User",
+#          "value": "Calculate the area of a circle with radius 5. Show your work.",
+#          "canonical_form": "",
+#          "label": ""
+#        },
+#        {
+#          "from": "Assistant",
+#          "value": "<think>\nI need to calculate the area of a circle with radius 5.\nThe formula is $A = \\pi r^2$\nGiven: $r = 5$\nSubstitution: $A = \\pi \\cdot 5^2 = \\pi \\cdot 25 = 25\\pi$\nNumerically: $A \\approx 3.14159 \\times 25 \\approx 78.54$\n</think>\n\nI'll calculate the area using the formula $A = \\pi r^2$.\n\nGiven $r = 5$:\n$A = \\pi \\cdot 5^2 = 25\\pi \\approx 78.54$ square units.",
+#          "canonical_form": "",
+#          "label": ""
+#        }
+#      ],
+#      "system": "",
+#      "mask": "User"
+#    }
+#
+# formatting constraints:
+#   - do not translate text inside <think> and </think> tags (reasoning chains should remain unchanged)
+#   - do not translate LaTeX formulas (text between $ and $ should remain unchanged)
+#   - translate all other text to the target language
+#   - put translation as extra field "translation" in each of the conversation entries, keep all the other fields as-is
+
+system: You are an experienced translator that translates documents accurately into fluent text in target language, while following other formatting instructions in the prompt.
+
+user: |-
+  You need to translate the {source_lang} source text in all "value" fields to {target_lang}.
+
+  Please follow these formatting rules:
+
+  (1) For text between <think> and </think> tags: keep the original text, do not translate
+  (2) For LaTeX formulas (text between $ and $): keep the original formulas, do not translate
+  (3) For all other text in "value" fields: translate it to {target_lang}
+  (4) Return the translation as a json object, with an extra field "translation" in each conversation entry, keeping all other fields unchanged
+
+  {source_lang} JSON input:
+
+  {src}
