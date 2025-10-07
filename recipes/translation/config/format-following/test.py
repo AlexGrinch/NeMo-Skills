@@ -18,12 +18,96 @@ LOGGING_LEVEL = logging.DEBUG
 
 logging.basicConfig(level=LOGGING_LEVEL, format="%(levelname)s: %(message)s", force=True)
 
+
+def get_format1_test_data():
+    """Get Format1 test data as JSON strings."""
+
+    import json
+
+    from nemo_skills.prompt.few_shot_examples.format_translation import format1_data
+
+    input_text = json.dumps(format1_data["input"])
+
+    generation_correct = f"Here is the translation: {json.dumps(format1_data['correct_output'])}\n"
+
+    generation_incorrect = f"""Ok, I have to translate the text to German. I need to follow the formatting rules:
+1. For text between <think> and </think> tags: keep the original text, do not translate
+2. For code blocks between ```python and ``` tags: keep the original code, do not translate
+3. For all other text: translate it to German
+4. Return the translation as a json object, with an extra field "translation" in each conversation entry, keeping all other fields unchanged
+
+Here is the translation:
+{json.dumps(format1_data["incorrect_output"])}
+"""
+
+    return input_text, generation_correct, generation_incorrect
+
+
+def get_format2_test_data():
+    """Get Format2 test data as JSON strings."""
+
+    import json
+
+    from nemo_skills.prompt.few_shot_examples.format_translation import format2_data
+
+    input_text = json.dumps(format2_data["input"])
+
+    generation_correct = f"Here is the translation: {json.dumps(format2_data['correct_output'])}\n"
+
+    generation_incorrect = f"""I need to translate the text to German while separating think tags and other content.
+
+Here is the translation:
+{json.dumps(format2_data["incorrect_output"])}
+"""
+
+    return input_text, generation_correct, generation_incorrect
+
+
+def get_format6_test_data():
+    """Get format6 test data as JSON strings."""
+
+    import json
+
+    from nemo_skills.prompt.few_shot_examples.format_translation import format6_data
+
+    input_text = json.dumps(format6_data["input"])
+
+    generation_correct = f"Here is the translation: {json.dumps(format6_data['correct_output'])}\n"
+
+    generation_incorrect = f"""I need to translate the text to Spanish while preserving think tags and LaTeX formulas.
+
+Here is the translation:
+{json.dumps(format6_data["incorrect_output"])}
+"""
+
+    return input_text, generation_correct, generation_incorrect
+
+
+def get_format11_test_data():
+    """Get Format11 test data as JSON strings."""
+
+    import json
+
+    from nemo_skills.prompt.few_shot_examples.format_translation import format11_data
+
+    input_text = json.dumps(format11_data["input"])
+
+    generation_correct = f"Here is the translation: {json.dumps(format11_data['correct_output'])}\n"
+
+    generation_incorrect = f"""I need to translate the text to Spanish while preserving LaTeX formatting.
+
+Here is the translation:
+{json.dumps(format11_data["incorrect_output"])}
+"""
+
+    return input_text, generation_correct, generation_incorrect
+
+
 if __name__ == "__main__":
     from format1 import Format1Checker
     from format2 import Format2Checker
     from format6 import Format6Checker
     from format11 import Format11Checker
-    from test_data import get_format1_test_data, get_format2_test_data, get_format6_test_data, get_format11_test_data
 
     print("=" * 80)
     print("TESTING FORMAT1 CHECKER")

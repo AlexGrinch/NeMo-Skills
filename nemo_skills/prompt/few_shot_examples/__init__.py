@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from nemo_skills.prompt.few_shot_examples.format_translation import examples_map as examples_format_translation
 from nemo_skills.prompt.few_shot_examples.gsm8k import examples_map as examples_gsm8k
 from nemo_skills.prompt.few_shot_examples.lean4 import examples_map as examples_lean4
 from nemo_skills.prompt.few_shot_examples.math import examples_map as examples_math
@@ -25,6 +26,7 @@ all_example_sets = [
     examples_mmlu_pro,
     examples_mmlu,
     examples_open_science,
+    examples_format_translation,
 ]
 
 examples_map = {k: v for d in all_example_sets for k, v in d.items()}

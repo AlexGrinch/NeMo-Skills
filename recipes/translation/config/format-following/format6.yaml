@@ -35,7 +35,7 @@ user: |-
   (1) For text between <think> and </think> tags: keep the original text, do not translate
   (2) For LaTeX formulas (text between $ and $): keep the original formulas, do not translate
   (3) For all other text in "value" fields: translate it to {target_lang}
-  (4) Return the translation as a json object, with an extra field "translation" in each conversation entry, keeping all other fields unchanged
+  (4) Return the translation as a json object, with an extra field "translation" in each conversation entry. Keep all input fields unchanged.
 
   {source_lang} JSON input:
 

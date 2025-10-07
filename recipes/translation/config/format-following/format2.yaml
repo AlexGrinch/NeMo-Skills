@@ -39,7 +39,7 @@ user: |-
   (3) For code blocks between ``` tags: preserve them as-is without translation
   (4) Return the translation as a json object
   (5) Create a new field "translation" in each conversation entry, with "translation_trace" and "translation_answer" as its subfields
-  (6) Keep all other fields unchanged
+  (6) Keep all input fields unchanged
 
   Source text ({source_lang}):
 
