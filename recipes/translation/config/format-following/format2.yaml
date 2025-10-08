@@ -27,6 +27,15 @@
 #   - keep all the other fields as-is
 #   - preserve code blocks between ``` tags
 
+# Few-shot examples configuration
+few_shot_examples:
+  prefix: "Here is an example to illustrate the formatting rules:\n\n"
+  template: "Input ({source_lang}):\n{input_example}\n\nOutput ({target_lang}):\n{output_example}\n\n"
+  suffix: "Now translate the following:\n\n"
+  examples_type: "format1_translation_few_shot"
+  # this reuses the test data from test_data.py to avoid redundancy
+  # and available as {examples} key in the final prompt
+
 system: You are an experienced translator that translates documents accurately into fluent text in target language, while following other formatting instructions in the prompt.
 
 user: |-
@@ -41,7 +50,7 @@ user: |-
   (5) Create a new field "translation" in each conversation entry, with "translation_trace" and "translation_answer" as its subfields
   (6) Keep all input fields unchanged
 
-  Source text ({source_lang}):
+  {examples}Source text ({source_lang}):
 
   ```json
   {src}
