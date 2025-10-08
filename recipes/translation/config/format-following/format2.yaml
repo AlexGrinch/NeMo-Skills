@@ -32,7 +32,7 @@ few_shot_examples:
   prefix: "Here is an example to illustrate the formatting rules:\n\n"
   template: "Input ({source_lang}):\n{input_example}\n\nOutput ({target_lang}):\n{output_example}\n\n"
   suffix: "Now translate the following:\n\n"
-  examples_type: "format1_translation_few_shot"
+  examples_type: "format2_translation_few_shot"
   # this reuses the test data from test_data.py to avoid redundancy
   # and available as {examples} key in the final prompt
 

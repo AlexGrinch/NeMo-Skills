@@ -248,7 +248,19 @@ format1_translation_examples = [
     }
 ]
 
+# Convert format2 data to few-shot example format
+format2_translation_examples = [
+    {
+        "input_example": json.dumps(format2_data["input"], indent=2),
+        "output_example": json.dumps(format2_data["correct_output"], indent=2),
+        "source_lang": "English",
+        "target_lang": "German",
+    }
+]
+
+
 # Examples map for nemo-skills integration
 examples_map = {
     "format1_translation_few_shot": format1_translation_examples,
+    "format2_translation_few_shot": format2_translation_examples,
 }
