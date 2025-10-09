@@ -93,6 +93,7 @@ class BenchmarkArgs:
     judge_args: str
     judge_pipeline_args: dict
     requires_sandbox: bool
+    keep_mounts_for_sandbox: bool
     generation_module: str
     num_samples: int
     num_chunks: int | None
@@ -180,6 +181,9 @@ def get_benchmark_args_from_module(
     if prompt_config:
         generation_args = f"++prompt_config={prompt_config} {generation_args}"
     requires_sandbox = get_arg_from_module_or_dict(benchmark_module, "REQUIRES_SANDBOX", False, override_dict)
+    keep_mounts_for_sandbox = get_arg_from_module_or_dict(
+        benchmark_module, "KEEP_MOUNTS_FOR_SANDBOX", False, override_dict
+    )
 
     generation_module = get_arg_from_module_or_dict(
         benchmark_module, "GENERATION_MODULE", "nemo_skills.inference.generate", override_dict
@@ -221,6 +225,7 @@ def get_benchmark_args_from_module(
         judge_args=judge_args,
         judge_pipeline_args=judge_pipeline_args,
         requires_sandbox=requires_sandbox,
+        keep_mounts_for_sandbox=keep_mounts_for_sandbox,
         generation_module=generation_module,
         num_samples=num_samples,
         num_chunks=num_chunks,
@@ -304,6 +309,7 @@ def prepare_eval_commands(
     extra_datasets_type,
     exclusive,
     with_sandbox,
+    keep_mounts_for_sandbox,
     wandb_parameters,
     extra_eval_args,
     eval_requires_judge,
@@ -354,14 +360,19 @@ def prepare_eval_commands(
             benchmarks_dict[benchmark] = benchmark_args
             if rs_num != -1:
                 if len(cur_benchmarks) > 1:
-                    raise ValueError(
-                        f"Cannot specify number of samples ({rs_num}) for benchmark group {benchmark_or_group}. "
-                        f"Use '{benchmark_or_group}' instead of '{benchmark_or_group}:{rs_num}'."
+                    LOG.warning(
+                        "Number of samples > 1 (%d) is specified for a benchmark group %s, "
+                        "overriding for all benchmarks in the group.",
+                        rs_num,
+                        benchmark_or_group,
                     )
                 benchmarks_dict[benchmark].num_samples = rs_num
 
             if benchmark_args.requires_sandbox and not with_sandbox:
                 LOG.warning("Found benchmark (%s) which requires sandbox, enabled sandbox for it.", benchmark)
+
+            if benchmark_args.requires_sandbox and not keep_mounts_for_sandbox:
+                LOG.warning("Found benchmark (%s) which requires sandbox to keep mounts, enabling it.", benchmark)
 
     total_evals = 0
     for benchmark, benchmark_args in benchmarks_dict.items():
@@ -404,9 +415,7 @@ def prepare_eval_commands(
         eval_to_job_map.extend([i] * count)
 
     cur_job_idx = 0
-    get_random_port = pipeline_utils.should_get_random_port(
-        server_parameters["server_gpus"], exclusive, server_parameters["server_type"]
-    )
+    get_random_port = pipeline_utils.should_get_random_port(server_parameters["server_gpus"], exclusive)
     job_server_config, job_server_address, job_extra_arguments = pipeline_utils.configure_client(
         **server_parameters,
         extra_arguments=extra_arguments,
@@ -505,12 +514,16 @@ def prepare_eval_commands(
 
                 if cur_eval == total_evals - 1 or cur_job_idx != eval_to_job_map[cur_eval + 1]:
                     job_needs_sandbox = any(benchmarks_dict[b].requires_sandbox for b in job_benchmarks)
+                    job_needs_sandbox_to_keep_mounts = any(
+                        benchmarks_dict[b].keep_mounts_for_sandbox for b in job_benchmarks
+                    )
                     # TODO: move to a dataclass
                     job_batches.append(
                         (
                             job_cmds,
                             job_benchmarks,
                             job_needs_sandbox,
+                            job_needs_sandbox_to_keep_mounts,
                             job_server_config,
                             job_server_address,
                             # a check above guarantees that this is the same for all tasks in a job

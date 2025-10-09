@@ -30,12 +30,12 @@ from nemo_skills.pipeline.utils import (
     get_exp,
     get_mounted_path,
     get_nsight_cmd,
-    get_timeout,
+    get_timeout_str,
     resolve_mount_paths,
     run_exp,
     temporary_env_update,
 )
-from nemo_skills.utils import get_logger_name, setup_logging
+from nemo_skills.utils import get_logger_name, setup_logging, validate_wandb_project_name
 
 LOG = logging.getLogger(get_logger_name(__file__))
 
@@ -96,6 +96,14 @@ class NemoRLTask:
         )
         if self.wandb_group:
             cmd += f"++logger.wandb.group={self.wandb_group} "
+
+        if not self.disable_wandb:
+            validate_wandb_project_name(
+                wandb_project=self.wandb_project,
+                wandb_name=self.expname,
+                wandb_group=self.wandb_group,
+                wandb_id=wandb_id,
+            )
         return cmd
 
     def get_cmd(self):
@@ -134,7 +142,7 @@ def get_training_cmd(
     backend,
     profile_step_range,
 ):
-    timeout = get_timeout(cluster_config, partition)
+    timeout = get_timeout_str(cluster_config, partition)
 
     task = NemoRLTask(
         model=hf_model,
@@ -211,6 +219,7 @@ def sft_nemo_rl(
     partition: str = typer.Option(
         None, help="Can specify if need interactive jobs or a specific non-default partition"
     ),
+    qos: str = typer.Option(None, help="Specify Slurm QoS, e.g. to request interactive nodes"),
     time_min: str = typer.Option(None, help="If specified, will use as a time-min slurm parameter"),
     backend: SupportedBackends = typer.Option(
         ...,
@@ -339,6 +348,7 @@ def sft_nemo_rl(
                     cluster_config=cluster_config,
                     server_config=server_config,
                     partition=partition,
+                    qos=qos,
                     time_min=time_min,
                     run_after=run_after,
                     reuse_code=reuse_code,
@@ -365,6 +375,7 @@ def sft_nemo_rl(
             container=cluster_config["containers"]["nemo-rl"],
             cluster_config=cluster_config,
             partition=partition,
+            qos=qos,
             time_min=time_min,
             num_nodes=1,
             num_tasks=1,
