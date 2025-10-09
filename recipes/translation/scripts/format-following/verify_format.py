@@ -54,6 +54,7 @@ class FormatVerificationResult:
         self.passed_lines = 0
         self.failed_lines = 0
         self.errors: List[Tuple[int, str, str]] = []  # (line_num, input_text, error_msg)
+        self.failed_line_numbers: List[int] = []  # Track failed line numbers for summary
 
     def add_result(self, line_num: int, passed: bool, input_text: str = "", error_msg: str = ""):
         """Add a verification result for a line."""
@@ -62,6 +63,7 @@ class FormatVerificationResult:
             self.passed_lines += 1
         else:
             self.failed_lines += 1
+            self.failed_line_numbers.append(line_num)
             self.errors.append(
                 (line_num, input_text[:100] + "..." if len(input_text) > 100 else input_text, error_msg)
             )
@@ -69,12 +71,35 @@ class FormatVerificationResult:
     def get_summary(self) -> str:
         """Get a summary of the verification results."""
         pass_rate = (self.passed_lines / self.total_lines * 100) if self.total_lines > 0 else 0
-        return (
+        summary = (
             f"Verification Summary:\n"
             f"  Total lines: {self.total_lines}\n"
             f"  Passed: {self.passed_lines} ({pass_rate:.1f}%)\n"
             f"  Failed: {self.failed_lines}\n"
         )
+
+        # Add failed lines summary if there are failures
+        if self.failed_line_numbers:
+            summary += self.get_failed_lines_summary()
+
+        return summary
+
+    def get_failed_lines_summary(self) -> str:
+        """Get a summary of failed line numbers."""
+        if not self.failed_line_numbers:
+            return ""
+
+        # Show first 10 line numbers
+        display_count = 10
+        displayed_lines = self.failed_line_numbers[:display_count]
+
+        lines_str = ", ".join(map(str, displayed_lines))
+
+        if len(self.failed_line_numbers) > display_count:
+            remaining = len(self.failed_line_numbers) - display_count
+            lines_str += f", ... and {remaining} more"
+
+        return f"  Lines: {lines_str}\n"
 
 
 class FormatVerifier:
@@ -124,6 +149,69 @@ class FormatVerifier:
 
         return logger
 
+    def _verify_line_content(self, line_num: int, line: str, show_content: bool = False) -> Tuple[bool, str]:
+        """
+        Verify the content of a single line.
+
+        Args:
+            line_num: Line number (for logging)
+            line: The line content to verify
+            show_content: Whether to log the input/output content
+
+        Returns:
+            Tuple of (is_valid, error_message)
+        """
+        if not line:
+            error_msg = "Empty line"
+            if self.verbose:
+                self.logger.warning(f"Line {line_num}: Empty line found")
+            return False, error_msg
+
+        # Parse JSON line
+        try:
+            data = json.loads(line)
+        except json.JSONDecodeError as e:
+            error_msg = f"JSON parse error: {str(e)}"
+            if self.verbose:
+                self.logger.error(f"Line {line_num}: {error_msg}")
+            return False, error_msg
+
+        # Extract src field (input)
+        if "src" not in data:
+            error_msg = "Missing 'src' field in data"
+            if self.verbose:
+                self.logger.error(f"Line {line_num}: {error_msg}")
+            return False, error_msg
+
+        # Extract generation field (output)
+        if "generation" not in data:
+            error_msg = "Missing 'generation' field in data"
+            if self.verbose:
+                self.logger.error(f"Line {line_num}: {error_msg}")
+            return False, error_msg
+
+        # Extract content for format checking
+        input_text = data["src"]
+        output_text = data["generation"]
+
+        # Show content if requested (for single line verification)
+        if show_content:
+            self.logger.info(f"Input text: {input_text[:200]}{'...' if len(input_text) > 200 else ''}")
+            self.logger.info(f"Output text: {output_text[:200]}{'...' if len(output_text) > 200 else ''}")
+
+        # Perform format check
+        is_valid = self.checker.check(input_text, output_text)
+
+        if is_valid:
+            if self.verbose:
+                self.logger.debug(f"Line {line_num}: ✓ PASSED")
+            return True, ""
+        else:
+            error_msg = "Format validation failed"
+            if self.verbose:
+                self.logger.warning(f"Line {line_num}: ✗ FAILED - {error_msg}")
+            return False, error_msg
+
     def verify_file(self, file_path: str) -> FormatVerificationResult:
         """
         Verify a JSONL file containing both src and generation fields line by line.
@@ -145,55 +233,8 @@ class FormatVerifier:
                 for line_num, line in enumerate(lines, 1):
                     try:
                         line = line.strip()
-
-                        if not line:
-                            if self.verbose:
-                                self.logger.warning(f"Line {line_num}: Empty line found")
-                            result.add_result(line_num, False, line, "Empty line")
-                            continue
-
-                        # Parse JSON line
-                        try:
-                            data = json.loads(line)
-                        except json.JSONDecodeError as e:
-                            error_msg = f"JSON parse error: {str(e)}"
-                            result.add_result(line_num, False, line, error_msg)
-                            if self.verbose:
-                                self.logger.error(f"Line {line_num}: {error_msg}")
-                            continue
-
-                        # Extract src field (input)
-                        if "src" not in data:
-                            error_msg = "Missing 'src' field in data"
-                            result.add_result(line_num, False, line, error_msg)
-                            if self.verbose:
-                                self.logger.error(f"Line {line_num}: {error_msg}")
-                            continue
-
-                        # Extract generation field (output)
-                        if "generation" not in data:
-                            error_msg = "Missing 'generation' field in data"
-                            result.add_result(line_num, False, line, error_msg)
-                            if self.verbose:
-                                self.logger.error(f"Line {line_num}: {error_msg}")
-                            continue
-
-                        # Extract content for format checking
-                        input_text = data["src"]
-                        output_text = data["generation"]
-
-                        # Perform format check
-                        is_valid = self.checker.check(input_text, output_text)
-
-                        if is_valid:
-                            result.add_result(line_num, True)
-                            if self.verbose:
-                                self.logger.debug(f"Line {line_num}: ✓ PASSED")
-                        else:
-                            error_msg = "Format validation failed"
-                            result.add_result(line_num, False, line, error_msg)
-                            if self.verbose:
-                                self.logger.warning(f"Line {line_num}: ✗ FAILED - {error_msg}")
+                        is_valid, error_msg = self._verify_line_content(line_num, line)
+                        result.add_result(line_num, is_valid, line, error_msg)
 
                     except Exception as e:
                         error_msg = f"Unexpected error: {str(e)}"
@@ -206,6 +247,44 @@ class FormatVerifier:
             self.logger.error(f"Error reading files: {str(e)}")
 
         return result
+
+    def verify_single_line(self, file_path: str, line_number: int) -> bool:
+        """
+        Verify a specific line in a JSONL file.
+
+        Args:
+            file_path: Path to JSONL file containing both src and generation fields
+            line_number: Line number to verify (1-indexed)
+
+        Returns:
+            True if the line passes verification, False otherwise
+        """
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+
+            if line_number < 1 or line_number > len(lines):
+                self.logger.error(f"Line number {line_number} is out of range (1-{len(lines)})")
+                return False
+
+            line = lines[line_number - 1].strip()
+            self.logger.info(f"Verifying line {line_number}...")
+
+            is_valid, error_msg = self._verify_line_content(line_number, line, show_content=True)
+
+            if is_valid:
+                self.logger.info(f"Line {line_number}: ✓ PASSED")
+            else:
+                self.logger.warning(f"Line {line_number}: ✗ FAILED - {error_msg}")
+
+            return is_valid
+
+        except FileNotFoundError as e:
+            self.logger.error(f"File not found: {str(e)}")
+            return False
+        except Exception as e:
+            self.logger.error(f"Line {line_number}: Unexpected error: {str(e)}")
+            return False
 
 
 def load_format_checker(checker_name: str) -> Optional[FormatChecker]:
@@ -281,6 +360,7 @@ def main():
 Examples:
   %(prog)s --checker format1 --file data.jsonl
   %(prog)s --checker format2 --file data.jsonl --verbose
+  %(prog)s --checker format1 --file data.jsonl --line 42
   %(prog)s --list-checkers
         """,
     )
@@ -297,6 +377,10 @@ Examples:
 
     parser.add_argument(
         "--max-errors", type=int, default=10, help="Maximum number of detailed errors to display (default: 10)"
+    )
+
+    parser.add_argument(
+        "--line", type=int, help="Verify only a specific line number (1-indexed). Automatically enables verbose mode."
     )
 
     args = parser.parse_args()
@@ -316,6 +400,10 @@ Examples:
     if not all([args.checker, args.file]):
         parser.error("--checker and --file are required (unless using --list-checkers)")
 
+    # If --line is specified, enable verbose mode automatically
+    if args.line:
+        args.verbose = True
+
     # Check if file exists
     if not os.path.exists(args.file):
         print(f"Error: File '{args.file}' not found")
@@ -329,17 +417,24 @@ Examples:
 
     # Create verifier and run verification
     verifier = FormatVerifier(checker, verbose=args.verbose)
-    print(f"Verifying file: {args.file}")
 
-    result = verifier.verify_file(args.file)
-
-    # Print results
-    print("\n" + result.get_summary())
-
-    if result.failed_lines > 0:
-        return 1
+    if args.line:
+        # Verify single line
+        print(f"Verifying line {args.line} in file: {args.file}")
+        success = verifier.verify_single_line(args.file, args.line)
+        return 0 if success else 1
     else:
-        return 0
+        # Verify entire file
+        print(f"Verifying file: {args.file}")
+        result = verifier.verify_file(args.file)
+
+        # Print results
+        print("\n" + result.get_summary())
+
+        if result.failed_lines > 0:
+            return 1
+        else:
+            return 0
 
 
 if __name__ == "__main__":

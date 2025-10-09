@@ -113,17 +113,13 @@ class Format1Checker(FormatChecker):
         # Check that system and mask fields are unchanged
         logger.debug("  Checking system field preservation...")
         if input_data["system"] != output_data["system"]:
-            logger.debug(
-                f"  FAILED: System field changed - input: '{input_data['system']}', output: '{output_data['system']}'"
-            )
+            logger.debug("  FAILED: System field changed")
             return False
         logger.debug("  ✓ System field preserved")
 
         logger.debug("  Checking mask field preservation...")
         if input_data["mask"] != output_data["mask"]:
-            logger.debug(
-                f"  FAILED: Mask field changed - input: '{input_data['mask']}', output: '{output_data['mask']}'"
-            )
+            logger.debug("  FAILED: Mask field changed")
             return False
         logger.debug("  ✓ Mask field preserved")
 
@@ -149,9 +145,7 @@ class Format1Checker(FormatChecker):
                 logger.debug(f"    FAILED: Missing required field '{field}' in output conversation")
                 return False
             if input_conv[field] != output_conv[field]:
-                logger.debug(
-                    f"    FAILED: Field '{field}' changed - input: '{input_conv[field]}', output: '{output_conv[field]}'"
-                )
+                logger.debug(f"    FAILED: Field '{field}' changed")
                 return False
         logger.debug("    ✓ All required fields preserved")
 
@@ -177,9 +171,7 @@ class Format1Checker(FormatChecker):
 
         # Think tag content should be identical
         if original_thinks != translation_thinks:
-            logger.debug(
-                f"      FAILED: Think tag content differs - original: {original_thinks}, translation: {translation_thinks}"
-            )
+            logger.debug("      FAILED: Think tag content differs")
             return False
         logger.debug(f"      ✓ Think tags preserved ({len(original_thinks)} found)")
 

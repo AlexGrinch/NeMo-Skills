@@ -113,17 +113,13 @@ class Format2Checker(FormatChecker):
         # Check that system and mask fields are unchanged
         logger.debug("  Checking system field preservation...")
         if input_data["system"] != output_data["system"]:
-            logger.debug(
-                f"  FAILED: System field changed - input: '{input_data['system']}', output: '{output_data['system']}'"
-            )
+            logger.debug("  FAILED: System field changed")
             return False
         logger.debug("  ✓ System field preserved")
 
         logger.debug("  Checking mask field preservation...")
         if input_data["mask"] != output_data["mask"]:
-            logger.debug(
-                f"  FAILED: Mask field changed - input: '{input_data['mask']}', output: '{output_data['mask']}'"
-            )
+            logger.debug("  FAILED: Mask field changed")
             return False
         logger.debug("  ✓ Mask field preserved")
 
@@ -162,9 +158,7 @@ class Format2Checker(FormatChecker):
                 logger.debug(f"    FAILED: Missing required field '{field}' in output conversation")
                 return False
             if input_conv[field] != output_conv[field]:
-                logger.debug(
-                    f"    FAILED: Field '{field}' changed - input: '{input_conv[field]}', output: '{output_conv[field]}'"
-                )
+                logger.debug(f"    FAILED: Field '{field}' changed")
                 return False
         logger.debug("    ✓ All required fields preserved")
 
@@ -193,9 +187,7 @@ class Format2Checker(FormatChecker):
         trace_thinks = re.findall(think_pattern, translation_trace, re.DOTALL)
 
         if len(original_thinks) != len(trace_thinks):
-            logger.debug(
-                f"      FAILED: Think tag count mismatch - original: {len(original_thinks)}, trace: {len(trace_thinks)}"
-            )
+            logger.debug("      FAILED: Think tag count mismatch")
             return False
 
         # If there are think tags, translation_trace should contain them
