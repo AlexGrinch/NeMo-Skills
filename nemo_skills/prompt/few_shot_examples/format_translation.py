@@ -258,9 +258,28 @@ format2_translation_examples = [
     }
 ]
 
+format6_translation_examples = [
+    {
+        "input_example": json.dumps(format6_data["input"], indent=2),
+        "output_example": json.dumps(format6_data["correct_output"], indent=2),
+        "source_lang": "English",
+        "target_lang": "German",
+    }
+]
+
+format11_translation_examples = [
+    {
+        "input_example": json.dumps(format11_data["input"], indent=2),
+        "output_example": json.dumps(format11_data["correct_output"], indent=2),
+        "source_lang": "English",
+        "target_lang": "German",
+    }
+]
 
 # Examples map for nemo-skills integration
 examples_map = {
     "format1_translation_few_shot": format1_translation_examples,
     "format2_translation_few_shot": format2_translation_examples,
+    "format6_translation_few_shot": format6_translation_examples,
+    "format11_translation_few_shot": format11_translation_examples,
 }

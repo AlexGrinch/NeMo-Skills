@@ -25,6 +25,15 @@
 #   - translate all other text to the target language
 #   - put translation as extra field "translation" in each of the conversation entries, keep all the other fields as-is
 
+# Few-shot examples configuration
+few_shot_examples:
+  prefix: "Here is an example to illustrate the formatting rules:\n\n"
+  template: "Input ({source_lang}):\n{input_example}\n\nOutput ({target_lang}):\n{output_example}\n\n"
+  suffix: "Now translate the following:\n\n"
+  examples_type: "format6_translation_few_shot"
+  # this reuses the test data from test_data.py to avoid redundancy
+  # and available as {examples} key in the final prompt
+
 system: You are an experienced translator that translates documents accurately into fluent text in target language, while following other formatting instructions in the prompt.
 
 user: |-
@@ -37,6 +46,6 @@ user: |-
   (3) For all other text in "value" fields: translate it to {target_lang}
   (4) Return the translation as a json object, with an extra field "translation" in each conversation entry. Keep all input fields unchanged.
 
-  {source_lang} JSON input:
+  {examples}{source_lang} JSON input:
 
   {src}
