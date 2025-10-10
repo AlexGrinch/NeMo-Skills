@@ -38,7 +38,7 @@ user: |-
   (2) For the generation field: translate it to {target_lang}
   (3) For the expected_answer field: translate it to {target_lang}
   (4) Preserve all new-lines and whitespaces
-  (5) Preserve all latex-like formatting, for example \boxed{} and \text{}
+  (5) Preserve all latex-like formatting, for example \boxed{{}} and \text{{}}
   (6) Return the translation as a json object
   (7) Keep all the other fields as-is
 
