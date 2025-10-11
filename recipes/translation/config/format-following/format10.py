@@ -23,12 +23,12 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
-class Format11Checker(FormatChecker):
-    """Checker for format 11."""
+class Format10Checker(FormatChecker):
+    """Checker for format 10."""
 
     def check(self, input_text: str, output_text: str) -> bool:
         """Check if the given text follows the expected format."""
-        logger.debug("Starting format11 check...")
+        logger.debug("Starting format10 check...")
 
         try:
             # Extract JSON from input prompt and output generation
@@ -76,7 +76,7 @@ class Format11Checker(FormatChecker):
                 return False
             logger.debug("✓ Translation constraints satisfied")
 
-            logger.debug("✓ All format11 checks passed!")
+            logger.debug("✓ All format10 checks passed!")
             return True
 
         except (json.JSONDecodeError, KeyError, TypeError) as e:

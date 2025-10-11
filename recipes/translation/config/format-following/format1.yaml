@@ -20,9 +20,12 @@
 #    }
 #
 # formatting constraints:
-#   - only translate the text outside <think> and </think> tags
-#   - do not translate the code between ```python and ``` tags
-#   - put translation as extra field "translation" in each of the conversation entries, keep all the other fields as-is
+#   - translate text inside <think> and </think> tags and put it in a field called "translation_trace"
+#   - translate the text outside <think> and </think> tags and put it in a field called "translation_answer"
+#   - return the translation as a json object
+#   - create a new field "translation" in each of the conversation entries, with "translation_trace" and "translation_answer" as its subfields
+#   - keep all the other fields as-is
+#   - preserve code blocks between ``` tags
 
 # Few-shot examples configuration
 few_shot_examples:
@@ -40,9 +43,15 @@ user: |-
 
   Please follow these formatting rules:
 
-  (1) For text between <think> and </think> tags: keep the original text, do not translate
-  (2) For code blocks between ``` tags: keep the original code, do not translate
-  (3) For all other text in "value" fields: translate it to {target_lang}
-  (4) Return the translation as a json object, with an extra field "translation" in each conversation entry. Keep all input fields unchanged.
+  (1) For text between <think> and </think> tags: translate it and put it in a field called "translation_trace"
+  (2) For text outside <think> and </think> tags: translate it and put it in a field called "translation_answer"
+  (3) For code blocks between ``` tags: preserve them as-is without translation
+  (4) Return the translation as a json object
+  (5) Create a new field "translation" in each conversation entry, with "translation_trace" and "translation_answer" as its subfields
+  (6) Keep all input fields unchanged
 
-  {examples}{source_lang}: {src}
+  {examples}Source text ({source_lang}):
+
+  ```json
+  {src}
+  ```

@@ -1,4 +1,4 @@
-# format 6
+# format 5
 # input:
 # {
 #   "expected_answer": "f(x) = 0 \\quad \\text{and} \\quad f(x) = \\dfrac{1}{2} \\quad \\text{and} \\quad f(x) = x^{2}",
@@ -17,7 +17,7 @@ few_shot_examples:
   prefix: "Here is an example to illustrate the formatting rules:\n\n"
   template: "Input ({source_lang}):\n{input_example}\n\nOutput ({target_lang}):\n{output_example}\n\n"
   suffix: "Now translate the following:\n\n"
-  examples_type: "format6_translation_few_shot"
+  examples_type: "format5_translation_few_shot"
   # this reuses the test data from test_data.py to avoid redundancy
   # and available as {examples} key in the final prompt
 

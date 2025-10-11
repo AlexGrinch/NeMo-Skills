@@ -17,10 +17,10 @@
 import json
 
 # =============================================================================
-# FORMAT 1 TEST DATA
+# FORMAT 0 TEST DATA
 # =============================================================================
 
-format1_data = {
+format0_data = {
     "input": {
         "conversations": [
             {"from": "User", "value": "Print hello world with Python.", "canonical_form": "", "label": ""},
@@ -70,10 +70,10 @@ format1_data = {
 }
 
 # =============================================================================
-# FORMAT 2 TEST DATA
+# FORMAT 1 TEST DATA
 # =============================================================================
 
-format2_data = {
+format1_data = {
     "input": {
         "conversations": [
             {"from": "User", "value": "Print hello world with Python.", "canonical_form": "", "label": ""},
@@ -136,10 +136,10 @@ format2_data = {
 }
 
 # =============================================================================
-# FORMAT 6 TEST DATA
+# FORMAT 5 TEST DATA
 # =============================================================================
 
-format6_data = {
+format5_data = {
     "input": {
         "expected_answer": "f(x) = 0 \\quad \\text{and} \\quad f(x) = \\dfrac{1}{3} \\quad \\text{and} \\quad f(x) = x^{2}",
         "input": "<|im_start|>system\n<|im_end|>\n<|im_start|>user\nSolve the following math problem. Make sure to put the answer (and only answer) inside \\boxed{}.\n\nFind all functions \\( f: \\mathbb{R} \\to \\mathbb{R} \\) such that:\n\\[\n(f(x) + f(y))(f(a) + f(b)) = f(xa + yb) + f(xb + ya)\n\\]<|im_end|>\n<|im_start|>assistant\n",
@@ -158,10 +158,10 @@ format6_data = {
 }
 
 # =============================================================================
-# FORMAT 11 TEST DATA
+# FORMAT 10 TEST DATA
 # =============================================================================
 
-format11_data = {
+format10_data = {
     "input": {
         "problem": "Which of the following best describes the concept of the digital divide and its impact on global inequality in the 21st century?\nA: The digital divide refers to the gap between those who have ready access to computers and the internet and those who do not, often exacerbating social and economic inequalities.\nB: The digital divide is the difference in technological skills between younger and older generations, leading to a generational gap in employment opportunities.",
         "generation": '<think>\nI need to solve this problem about the digital divide and its impact on global inequality. The question asks which option best describes the concept and its impact.\n\nOption A says: "The digital divide refers to the gap between those who have ready access to computers and the internet and those who do not, often exacerbating social and economic inequalities."\n\nThis sounds right. It mentions access to computers and the internet, and it talks about exacerbating social and economic inequalities.\n\nI think A is the answer.\n</think>\nA\n\n\\boxed{\\text{A}}',
@@ -195,6 +195,16 @@ format11_data = {
 # FEW-SHOT EXAMPLES FOR NEMO-SKILLS
 # =============================================================================
 
+# Convert format0 data to few-shot example format
+format0_translation_examples = [
+    {
+        "input_example": json.dumps(format0_data["input"], indent=2),
+        "output_example": json.dumps(format0_data["correct_output"], indent=2),
+        "source_lang": "English",
+        "target_lang": "German",
+    }
+]
+
 # Convert format1 data to few-shot example format
 format1_translation_examples = [
     {
@@ -205,29 +215,19 @@ format1_translation_examples = [
     }
 ]
 
-# Convert format2 data to few-shot example format
-format2_translation_examples = [
+format5_translation_examples = [
     {
-        "input_example": json.dumps(format2_data["input"], indent=2),
-        "output_example": json.dumps(format2_data["correct_output"], indent=2),
-        "source_lang": "English",
-        "target_lang": "German",
-    }
-]
-
-format6_translation_examples = [
-    {
-        "input_example": json.dumps(format6_data["input"], indent=2),
-        "output_example": json.dumps(format6_data["correct_output"], indent=2),
+        "input_example": json.dumps(format5_data["input"], indent=2),
+        "output_example": json.dumps(format5_data["correct_output"], indent=2),
         "source_lang": "English",
         "target_lang": "Spanish",
     }
 ]
 
-format11_translation_examples = [
+format10_translation_examples = [
     {
-        "input_example": json.dumps(format11_data["input"], indent=2),
-        "output_example": json.dumps(format11_data["correct_output"], indent=2),
+        "input_example": json.dumps(format10_data["input"], indent=2),
+        "output_example": json.dumps(format10_data["correct_output"], indent=2),
         "source_lang": "English",
         "target_lang": "German",
     }
@@ -235,8 +235,8 @@ format11_translation_examples = [
 
 # Examples map for nemo-skills integration
 examples_map = {
+    "format0_translation_few_shot": format0_translation_examples,
     "format1_translation_few_shot": format1_translation_examples,
-    "format2_translation_few_shot": format2_translation_examples,
-    "format6_translation_few_shot": format6_translation_examples,
-    "format11_translation_few_shot": format11_translation_examples,
+    "format5_translation_few_shot": format5_translation_examples,
+    "format10_translation_few_shot": format10_translation_examples,
 }

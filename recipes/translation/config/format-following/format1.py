@@ -89,7 +89,7 @@ class Format1Checker(FormatChecker):
                     return False
                 logger.debug(f"✓ Conversation entry {i + 1} validation passed")
 
-            logger.debug("✓ All format checks passed!")
+            logger.debug("✓ All format1 checks passed!")
             return True
 
         except (json.JSONDecodeError, KeyError, TypeError) as e:
@@ -134,6 +134,19 @@ class Format1Checker(FormatChecker):
             return False
         logger.debug("    ✓ Translation field present")
 
+        # Check that translation field has the required subfields
+        translation = output_conv["translation"]
+        if not isinstance(translation, dict):
+            logger.debug("    FAILED: Translation field is not a dictionary")
+            return False
+
+        required_translation_fields = ["translation_trace", "translation_answer"]
+        for field in required_translation_fields:
+            if field not in translation:
+                logger.debug(f"    FAILED: Missing '{field}' in translation field")
+                return False
+        logger.debug("    ✓ Translation subfields present")
+
         # Check that all original fields are preserved
         logger.debug("    Checking field preservation...")
         required_fields = ["from", "value", "canonical_form", "label"]
@@ -152,68 +165,73 @@ class Format1Checker(FormatChecker):
         # Check formatting constraints on the translation
         logger.debug("    Checking translation constraints...")
         input_value = input_conv["value"]
-        translation = output_conv["translation"]
+        translation_trace = translation["translation_trace"]
+        translation_answer = translation["translation_answer"]
 
-        if self._check_translation_constraints(input_value, translation):
+        if self._check_translation_constraints(input_value, translation_trace, translation_answer):
             logger.debug("    ✓ Translation constraints satisfied")
             return True
         else:
             logger.debug("    FAILED: Translation constraints not satisfied")
             return False
 
-    def _check_translation_constraints(self, original: str, translation: str) -> bool:
+    def _check_translation_constraints(self, original: str, translation_trace: str, translation_answer: str) -> bool:
         """Check that translation follows the formatting constraints."""
-        logger.debug("      Checking think tag preservation...")
-        # Extract think tags content - should not be translated
+        logger.debug("      Checking think tag handling...")
+
+        # Extract think tags content from original
         think_pattern = r"<think>(.*?)</think>"
         original_thinks = re.findall(think_pattern, original, re.DOTALL)
-        translation_thinks = re.findall(think_pattern, translation, re.DOTALL)
 
-        # Think tag content should be identical
-        if original_thinks != translation_thinks:
-            logger.debug("      FAILED: Think tag content differs")
+        # Check translation_trace - should contain translated think tag content
+        trace_thinks = re.findall(think_pattern, translation_trace, re.DOTALL)
+
+        if len(original_thinks) != len(trace_thinks):
+            logger.debug("      FAILED: Think tag count mismatch")
             return False
-        logger.debug(f"      ✓ Think tags preserved ({len(original_thinks)} found)")
+
+        # If there are think tags, translation_trace should contain them
+        if original_thinks:
+            if not translation_trace.strip():
+                logger.debug("      FAILED: Translation trace is empty but original has think tags")
+                return False
+            logger.debug(f"      ✓ Think tags handled in translation_trace ({len(original_thinks)} found)")
+        else:
+            # If no think tags, translation_trace should be empty
+            if translation_trace.strip():
+                logger.debug("      FAILED: Translation trace should be empty when no think tags present")
+                return False
+            logger.debug("      ✓ No think tags found, translation_trace is empty")
 
         logger.debug("      Checking code block preservation...")
-        # Extract code blocks - should not be translated
-        code_pattern = r"```python(.*?)```"
+        # Extract code blocks - should be preserved in translation_answer
+        code_pattern = r"```(.*?)```"
         original_codes = re.findall(code_pattern, original, re.DOTALL)
-        translation_codes = re.findall(code_pattern, translation, re.DOTALL)
+        answer_codes = re.findall(code_pattern, translation_answer, re.DOTALL)
 
-        # Code blocks should be identical
-        if original_codes != translation_codes:
+        # Code blocks should be identical in translation_answer
+        if original_codes != answer_codes:
             logger.debug(
-                f"      FAILED: Code block content differs - original: {original_codes}, translation: {translation_codes}"
+                f"      FAILED: Code block content differs - original: {original_codes}, answer: {answer_codes}"
             )
             return False
-        logger.debug(f"      ✓ Code blocks preserved ({len(original_codes)} found)")
+        logger.debug(f"      ✓ Code blocks preserved in translation_answer ({len(original_codes)} found)")
 
-        # Remove think tags and code blocks to check if other text was translated
-        logger.debug("      Checking translatable content...")
-        original_clean = self._remove_protected_content(original)
-        translation_clean = self._remove_protected_content(translation)
+        # Check that translation_answer contains the non-think content
+        logger.debug("      Checking translation_answer content...")
+        original_without_think = re.sub(r"<think>.*?</think>", "", original, flags=re.DOTALL).strip()
 
-        logger.debug(f"      Original clean text: '{original_clean}'")
-        logger.debug(f"      Translation clean text: '{translation_clean}'")
+        if original_without_think and not translation_answer.strip():
+            logger.debug("      FAILED: Translation answer is empty but original has non-think content")
+            return False
 
-        # If the clean text is identical, it means nothing was translated
-        # This could be valid if there was no translatable content
-        # But we should at least check that the structure is maintained
-        if original_clean == translation_clean:
-            logger.debug("      ✓ No translatable content found (or content unchanged)")
-        else:
-            logger.debug("      ✓ Translatable content appears to have been processed")
+        if not original_without_think and translation_answer.strip():
+            logger.debug("      FAILED: Translation answer should be empty when original has no non-think content")
+            return False
+
+        logger.debug("      ✓ Translation answer content validated")
 
         return True
-
-    def _remove_protected_content(self, text: str) -> str:
-        """Remove think tags and code blocks from text."""
-        # Remove think tag content but keep the tags
-        text = re.sub(r"<think>.*?</think>", "<think></think>", text, flags=re.DOTALL)
-        # Remove code block content but keep the markers
-        text = re.sub(r"```python.*?```", "```python```", text, flags=re.DOTALL)
-        return text.strip()
 
     def _extract_json_from_prompt(self, prompt_text: str) -> str:
         """Extract JSON object from the input prompt text."""
