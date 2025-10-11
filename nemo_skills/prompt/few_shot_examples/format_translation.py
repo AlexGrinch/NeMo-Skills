@@ -141,62 +141,19 @@ format2_data = {
 
 format6_data = {
     "input": {
-        "conversations": [
-            {
-                "from": "User",
-                "value": "Calculate the area of a circle with radius 5. Show your work.",
-                "canonical_form": "",
-                "label": "",
-            },
-            {
-                "from": "Assistant",
-                "value": "<think>\nI need to calculate the area of a circle with radius 5.\nThe formula is $A = \\pi r^2$\nGiven: $r = 5$\nSubstitution: $A = \\pi \\cdot 5^2 = \\pi \\cdot 25 = 25\\pi$\nNumerically: $A \\approx 3.14159 \\times 25 \\approx 78.54$\n</think>\n\nI'll calculate the area using the formula $A = \\pi r^2$.\n\nGiven $r = 5$:\n$A = \\pi \\cdot 5^2 = 25\\pi \\approx 78.54$ square units.",
-                "canonical_form": "",
-                "label": "",
-            },
-        ],
-        "system": "",
-        "mask": "User",
+        "expected_answer": "f(x) = 0 \\quad \\text{and} \\quad f(x) = \\dfrac{1}{3} \\quad \\text{and} \\quad f(x) = x^{2}",
+        "input": "<|im_start|>system\n<|im_end|>\n<|im_start|>user\nSolve the following math problem. Make sure to put the answer (and only answer) inside \\boxed{}.\n\nFind all functions \\( f: \\mathbb{R} \\to \\mathbb{R} \\) such that:\n\\[\n(f(x) + f(y))(f(a) + f(b)) = f(xa + yb) + f(xb + ya)\n\\]<|im_end|>\n<|im_start|>assistant\n",
+        "output": "<think>\nI need to find all functions $f: \\mathbb{R} \\to \\mathbb{R}$ that satisfy the functional equation $(f(x) + f(y))(f(a) + f(b)) = f(xa + yb) + f(xb + ya)$.\n\nLet me try some substitutions to understand the structure. First, let me set $x = y = a = b = 0$:\n$(f(0) + f(0))(f(0) + f(0)) = f(0) + f(0)$\n$4f(0)^2 = 2f(0)$\n$2f(0)^2 = f(0)$\n$f(0)(2f(0) - 1) = 0$\n\nSo either $f(0) = 0$ or $f(0) = \\frac{1}{2}$.\n</think>\n\nI need to find all functions $f: \\mathbb{R} \\to \\mathbb{R}$ satisfying the functional equation.\n\nLet me start by setting $x = y = a = b = 0$:\n$(f(0) + f(0))(f(0) + f(0)) = f(0) + f(0)$\n\nThis gives us $4f(0)^2 = 2f(0)$, so $f(0)(2f(0) - 1) = 0$.\n\nTherefore $f(0) = 0$ or $f(0) = \\frac{1}{2}$.\n\nAfter further analysis with various substitutions, I can show that the solutions are:\n\n\\boxed{f(x) = 0 \\quad \\text{and} \\quad f(x) = \\dfrac{1}{3} \\quad \\text{and} \\quad f(x) = x^{2}}<|im_end|>",
     },
     "correct_output": {
-        "conversations": [
-            {
-                "from": "User",
-                "value": "Calculate the area of a circle with radius 5. Show your work.",
-                "translation": "Calcule el área de un círculo con radio 5. Muestre su trabajo.",
-                "canonical_form": "",
-                "label": "",
-            },
-            {
-                "from": "Assistant",
-                "value": "<think>\nI need to calculate the area of a circle with radius 5.\nThe formula is $A = \\pi r^2$\nGiven: $r = 5$\nSubstitution: $A = \\pi \\cdot 5^2 = \\pi \\cdot 25 = 25\\pi$\nNumerically: $A \\approx 3.14159 \\times 25 \\approx 78.54$\n</think>\n\nI'll calculate the area using the formula $A = \\pi r^2$.\n\nGiven $r = 5$:\n$A = \\pi \\cdot 5^2 = 25\\pi \\approx 78.54$ square units.",
-                "translation": "<think>\nI need to calculate the area of a circle with radius 5.\nThe formula is $A = \\pi r^2$\nGiven: $r = 5$\nSubstitution: $A = \\pi \\cdot 5^2 = \\pi \\cdot 25 = 25\\pi$\nNumerically: $A \\approx 3.14159 \\times 25 \\approx 78.54$\n</think>\n\nCalcularé el área usando la fórmula $A = \\pi r^2$.\n\nDado $r = 5$:\n$A = \\pi \\cdot 5^2 = 25\\pi \\approx 78.54$ unidades cuadradas.",
-                "canonical_form": "",
-                "label": "",
-            },
-        ],
-        "system": "",
-        "mask": "User",
+        "expected_answer": "f(x) = 0 \\quad \\text{and} \\quad f(x) = \\dfrac{1}{3} \\quad \\text{and} \\quad f(x) = x^{2}",
+        "input": "<|im_start|>system\n<|im_end|>\n<|im_start|>user\nResuelve el siguiente problema de matemáticas. Asegúrate de poner la respuesta (y solo la respuesta) dentro de \\boxed{}.\n\nEncuentra todas las funciones \\( f: \\mathbb{R} \\to \\mathbb{R} \\) tales que:\n\\[\n(f(x) + f(y))(f(a) + f(b)) = f(xa + yb) + f(xb + ya)\n\\]<|im_end|>\n<|im_start|>assistant\n",
+        "output": "<think>\nI need to find all functions $f: \\mathbb{R} \\to \\mathbb{R}$ that satisfy the functional equation $(f(x) + f(y))(f(a) + f(b)) = f(xa + yb) + f(xb + ya)$.\n\nLet me try some substitutions to understand the structure. First, let me set $x = y = a = b = 0$:\n$(f(0) + f(0))(f(0) + f(0)) = f(0) + f(0)$\n$4f(0)^2 = 2f(0)$\n$2f(0)^2 = f(0)$\n$f(0)(2f(0) - 1) = 0$\n\nSo either $f(0) = 0$ or $f(0) = \\frac{1}{2}$.\n</think>\n\nNecesito encontrar todas las funciones $f: \\mathbb{R} \\to \\mathbb{R}$ que satisfacen la ecuación funcional.\n\nComencemos estableciendo $x = y = a = b = 0$:\n$(f(0) + f(0))(f(0) + f(0)) = f(0) + f(0)$\n\nEsto nos da $4f(0)^2 = 2f(0)$, entonces $f(0)(2f(0) - 1) = 0$.\n\nPor lo tanto $f(0) = 0$ o $f(0) = \\frac{1}{2}$.\n\nDespués de un análisis adicional con varias sustituciones, puedo mostrar que las soluciones son:\n\n\\boxed{f(x) = 0 \\quad \\text{and} \\quad f(x) = \\dfrac{1}{3} \\quad \\text{and} \\quad f(x) = x^{2}}<|im_end|>",
     },
     "incorrect_output": {
-        "conversations": [
-            {
-                "from": "User",
-                "value": "Calculate the area of a circle with radius 5. Show your work.",
-                "translation": "Calcule el área de un círculo con radio 5. Muestre su trabajo.",
-                "canonical_form": "",
-                "label": "",
-            },
-            {
-                "from": "Assistant",
-                "value": "<think>\nI need to calculate the area of a circle with radius 5.\nThe formula is $A = \\pi r^2$\nGiven: $r = 5$\nSubstitution: $A = \\pi \\cdot 5^2 = \\pi \\cdot 25 = 25\\pi$\nNumerically: $A \\approx 3.14159 \\times 25 \\approx 78.54$\n</think>\n\nI'll calculate the area using the formula $A = \\pi r^2$.\n\nGiven $r = 5$:\n$A = \\pi \\cdot 5^2 = 25\\pi \\approx 78.54$ square units.",
-                "translation": "<think>\nNecesito calcular el área de un círculo con radio 5.\nLa fórmula es $A = \\pi r^2$\nDado: $r = 5$\nSustitución: $A = \\pi \\cdot 5^2 = \\pi \\cdot 25 = 25\\pi$\nNuméricamente: $A \\approx 3.14159 \\times 25 \\approx 78.54$\n</think>\n\nCalcularé el área usando la fórmula $A = \\pi r^2$.\n\nDado $r = 5$:\n$A = \\pi \\cdot 5^2 = 25\\pi \\approx 78.54$ unidades cuadradas.",
-                "canonical_form": "",
-                "label": "",
-            },
-        ],
-        "system": "",
-        "mask": "User",
+        "expected_answer": "f(x) = 0 \\quad \\text{and} \\quad f(x) = \\dfrac{1}{3} \\quad \\text{and} \\quad f(x) = x^{2}",
+        "input": "<|im_start|>system\n<|im_end|>\n<|im_start|>user\nResuelve el siguiente problema de matemáticas. Asegúrate de poner la respuesta (y solo la respuesta) dentro de \\boxed{}.\n\nEncuentra todas las funciones \\( f: \\mathbb{R} \\to \\mathbb{R} \\) tales que:\n\\[\n(f(x) + f(y))(f(a) + f(b)) = f(xa + yb) + f(xb + ya)\n\\]<|im_end|>\n<|im_start|>assistant\n",
+        "output": "<think>\nNecesito encontrar todas las funciones $f: \\mathbb{R} \\to \\mathbb{R}$ que satisfacen la ecuación funcional $(f(x) + f(y))(f(a) + f(b)) = f(xa + yb) + f(xb + ya)$.\n\nPermíteme probar algunas sustituciones para entender la estructura. Primero, establecemos $x = y = a = b = 0$:\n$(f(0) + f(0))(f(0) + f(0)) = f(0) + f(0)$\n$4f(0)^2 = 2f(0)$\n$2f(0)^2 = f(0)$\n$f(0)(2f(0) - 1) = 0$\n\nEntonces $f(0) = 0$ o $f(0) = \\frac{1}{2}$.\n</think>\n\nNecesito encontrar todas las funciones $f: \\mathbb{R} \\to \\mathbb{R}$ que satisfacen la ecuación funcional.\n\nComencemos estableciendo $x = y = a = b = 0$:\n$(f(0) + f(0))(f(0) + f(0)) = f(0) + f(0)$\n\nEsto nos da $4f(0)^2 = 2f(0)$, entonces $f(0)(2f(0) - 1) = 0$.\n\nPor lo tanto $f(0) = 0$ o $f(0) = \\frac{1}{2}$.\n\nDespués de un análisis adicional con varias sustituciones, puedo mostrar que las soluciones son:\n\n\\boxed{f(x) = 0 \\quad \\text{and} \\quad f(x) = \\dfrac{1}{3} \\quad \\text{and} \\quad f(x) = x^{2}}<|im_end|>",
     },
 }
 
@@ -263,7 +220,7 @@ format6_translation_examples = [
         "input_example": json.dumps(format6_data["input"], indent=2),
         "output_example": json.dumps(format6_data["correct_output"], indent=2),
         "source_lang": "English",
-        "target_lang": "German",
+        "target_lang": "Spanish",
     }
 ]
 
