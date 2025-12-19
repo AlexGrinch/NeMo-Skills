@@ -1,0 +1,48 @@
+# format 2
+# input follows the same schema as format0/format1:
+# {
+#   "conversations": [
+#     {"from": "User", "value": "...", "canonical_form": "", "label": ""},
+#     {"from": "Assistant", "value": "...", "canonical_form": "", "label": ""}
+#   ],
+#   "system": "",
+#   "mask": "User"
+# }
+#
+# formatting constraints:
+#   - keep the text inside <think>...</think> unchanged (no translation)
+#   - keep any code blocks between ``` ``` unchanged
+#   - translate all other text in "value" fields to {target_lang}
+#   - add a new field "translation" to each conversation entry:
+#       * translation.translated_value: the translated string with <think> and code preserved
+#       * translation.notes: a short note in {target_lang} summarizing translation choices (e.g., glossary terms, style/tone, disambiguation). If text was translated, this note must be non-empty and not the default placeholder. If no text was translated, set this to "Nothing was translated".
+#   - keep every other input field unchanged
+#
+
+# Few-shot examples configuration
+few_shot_examples:
+  prefix: "Here is an example to illustrate the formatting rules:\n\n"
+  template: "Input ({source_lang}):\n{input_example}\n\nOutput ({target_lang}):\n{output_example}\n\n"
+  suffix: "Now translate the following:\n\n"
+  examples_type: "format2_translation_few_shot"
+  # this reuses the test data from test_data.py to avoid redundancy
+  # and available as {examples} key in the final prompt
+
+system: You are an experienced translator that translates documents accurately into fluent text in target language, while following other formatting instructions in the prompt.
+
+user: |-
+  You need to translate the {source_lang} source text to {target_lang}.
+
+  Please follow these formatting rules:
+
+  (1) For text between <think> and </think>: keep the original text, do not translate
+  (2) For code blocks between ``` and ```: keep the original code, do not translate
+  (3) For all other text in "value" fields: translate it to {target_lang}
+  (4) Add a field "translation" to each conversation entry with:
+      - "translated_value": translated text with <think> and code preserved
+      - "notes": a short note in {target_lang} about translation choices (glossary, tone, disambiguation). If anything was translated, this note must be non-empty and not the placeholder. If nothing was translated, set it exactly to "Nothing was translated".
+  (5) Return the translation as a json object. Keep every other field unchanged.
+
+  {examples}Here is the source json object:
+
+  {src}

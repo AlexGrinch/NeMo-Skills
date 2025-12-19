@@ -1,0 +1,45 @@
+# format 4
+# input schema matches format0/format1:
+# {
+#   "conversations": [...],
+#   "system": "",
+#   "mask": "User"
+# }
+#
+# formatting constraints:
+#   - translate all text in "value" fields to {target_lang}, including text inside <think>...</think>
+#   - preserve any code blocks between ``` ``` exactly
+#   - add a "translation" field to each conversation entry with:
+#       * "source": the original value string (unchanged)
+#       * "target": the translated value string with code blocks preserved
+#       * "language": the target language name
+#   - keep every other input field unchanged
+#   - return the result as a json object
+#
+
+# Few-shot examples configuration
+few_shot_examples:
+  prefix: "Here is an example to illustrate the formatting rules:\n\n"
+  template: "Input ({source_lang}):\n{input_example}\n\nOutput ({target_lang}):\n{output_example}\n\n"
+  suffix: "Now translate the following:\n\n"
+  examples_type: "format4_translation_few_shot"
+
+system: You are an experienced translator that translates documents accurately into fluent text in target language, while following other formatting instructions in the prompt.
+
+user: |-
+  You need to translate the {source_lang} source text to {target_lang}.
+
+  Please follow these formatting rules:
+
+  (1) Translate all text in "value" fields to {target_lang}, including text inside <think>...</think>
+  (2) Preserve any code blocks between ``` ``` exactly
+  (3) Add a "translation" object to each conversation entry:
+      - "source": copy of the original value
+      - "target": translated value with code blocks preserved
+      - "language": the target language
+  (4) Keep all other fields unchanged
+  (5) Return the translation as a json object
+
+  {examples}Here is the source json object:
+
+  {src}

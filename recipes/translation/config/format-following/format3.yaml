@@ -1,0 +1,39 @@
+# format 3
+# same input schema as format0/format1:
+# {
+#   "conversations": [...],
+#   "system": "",
+#   "mask": "User"
+# }
+#
+# formatting constraints:
+#   - translate text inside <think>...</think> into {target_lang} and place it in translation.think_translation (keep the <think> tags)
+#   - translate text outside <think>...</think> into {target_lang}, preserving any code blocks between ``` ```; place it in translation.non_think_translation
+#   - build translation.combined by merging the translated think segments, the translated non-think content, and the preserved code blocks in the original order
+#   - add this "translation" field to every conversation entry and keep all other fields unchanged
+#   - return the result as a json object
+#
+
+# Few-shot examples configuration
+few_shot_examples:
+  prefix: "Here is an example to illustrate the formatting rules:\n\n"
+  template: "Input ({source_lang}):\n{input_example}\n\nOutput ({target_lang}):\n{output_example}\n\n"
+  suffix: "Now translate the following:\n\n"
+  examples_type: "format3_translation_few_shot"
+
+system: You are an experienced translator that translates documents accurately into fluent text in target language, while following other formatting instructions in the prompt.
+
+user: |-
+  You need to translate the {source_lang} source text to {target_lang}.
+
+  Please follow these formatting rules:
+
+  (1) Translate text between <think> and </think>, keep the tags, and put the result in "translation.think_translation"
+  (2) Translate text outside <think>...</think>; preserve any code blocks between ``` ```; put the result in "translation.non_think_translation"
+  (3) Create "translation.combined" that merges translated think content, translated non-think content, and preserved code blocks in the original order
+  (4) Add the "translation" field to each conversation entry; keep all existing fields unchanged
+  (5) Return the translation as a json object
+
+  {examples}Here is the source json object:
+
+  {src}

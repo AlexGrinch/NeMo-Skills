@@ -136,6 +136,229 @@ format1_data = {
 }
 
 # =============================================================================
+# FORMAT 2 TEST DATA
+# =============================================================================
+
+format2_data = {
+    "input": {
+        "conversations": [
+            {"from": "User", "value": "Print hello world with Python.", "canonical_form": "", "label": ""},
+            {
+                "from": "Assistant",
+                "value": "<think>\nPrint hello world with Python.\n</think>\n\n```python\nprint('hello world')\n```",
+                "canonical_form": "",
+                "label": "",
+            },
+        ],
+        "system": "",
+        "mask": "User",
+    },
+    "correct_output": {
+        "conversations": [
+            {
+                "from": "User",
+                "value": "Print hello world with Python.",
+                "translation": {
+                    "translated_value": "Drucken Sie Hallo Welt mit Python.",
+                    "notes": 'Wählte den Imperativ "Drucken Sie" und übersetzte "hello world" wörtlich.',
+                },
+                "canonical_form": "",
+                "label": "",
+            },
+            {
+                "from": "Assistant",
+                "value": "<think>\nPrint hello world with Python.\n</think>\n\n```python\nprint('hello world')\n```",
+                "translation": {
+                    "translated_value": "<think>\nPrint hello world with Python.\n</think>\n\n```python\nprint('hello world')\n```",
+                    "notes": "Nothing was translated",
+                },
+                "canonical_form": "",
+                "label": "",
+            },
+        ],
+        "system": "",
+        "mask": "User",
+    },
+    "incorrect_output": {
+        "conversations": [
+            {
+                "from": "User",
+                "value": "Print hello world with Python.",
+                "translation": {"translated_value": "Drucken Sie Hallo Welt mit Python.", "notes": ""},
+                "canonical_form": "",
+                "label": "",
+            },
+            {
+                "from": "Assistant",
+                "value": "<think>\nPrint hello world with Python.\n</think>\n\n```python\nprint('hello world')\n```",
+                "translation": {
+                    "translated_value": "<think>\nPrint hello world with Python.\n</think>\n\n```python\nprint('hi')\n```",
+                    "notes": "",
+                },
+                "canonical_form": "",
+                "label": "",
+            },
+        ],
+        "system": "",
+        "mask": "User",
+    },
+}
+
+# =============================================================================
+# FORMAT 3 TEST DATA
+# =============================================================================
+
+format3_data = {
+    "input": {
+        "conversations": [
+            {"from": "User", "value": "Explain how to greet someone politely.", "canonical_form": "", "label": ""},
+            {
+                "from": "Assistant",
+                "value": "Intro text.\n<think>Inner reasoning</think>\nHere is code:\n```python\nprint('hello')\n```",
+                "canonical_form": "",
+                "label": "",
+            },
+        ],
+        "system": "",
+        "mask": "User",
+    },
+    "correct_output": {
+        "conversations": [
+            {
+                "from": "User",
+                "value": "Explain how to greet someone politely.",
+                "translation": {
+                    "think_translation": "",
+                    "non_think_translation": "Erkläre, wie man jemanden höflich begrüßt.",
+                    "combined": "Erkläre, wie man jemanden höflich begrüßt.",
+                },
+                "canonical_form": "",
+                "label": "",
+            },
+            {
+                "from": "Assistant",
+                "value": "Intro text.\n<think>Inner reasoning</think>\nHere is code:\n```python\nprint('hello')\n```",
+                "translation": {
+                    "think_translation": "<think>Inneres Nachdenken</think>",
+                    "non_think_translation": "Einleitungstext.\nHier ist Code:\n```python\nprint('hello')\n```",
+                    "combined": "Einleitungstext.\n<think>Inneres Nachdenken</think>\nHier ist Code:\n```python\nprint('hello')\n```",
+                },
+                "canonical_form": "",
+                "label": "",
+            },
+        ],
+        "system": "",
+        "mask": "User",
+    },
+    "incorrect_output": {
+        "conversations": [
+            {
+                "from": "User",
+                "value": "Explain how to greet someone politely.",
+                "translation": {
+                    "think_translation": "",
+                    "non_think_translation": "Erkläre, wie man jemanden höflich begrüßt.",
+                    "combined": "Erkläre, wie man jemanden höflich begrüßt.",
+                },
+                "canonical_form": "",
+                "label": "",
+            },
+            {
+                "from": "Assistant",
+                "value": "Intro text.\n<think>Inner reasoning</think>\nHere is code:\n```python\nprint('hello')\n```",
+                "translation": {
+                    # think translated, but combined puts it at the end (wrong order)
+                    "think_translation": "<think>Inneres Nachdenken</think>",
+                    "non_think_translation": "Einleitungstext.\nHier ist Code:\n```python\nprint('hello')\n```",
+                    "combined": "Einleitungstext.\nHier ist Code:\n```python\nprint('hello')\n```\n<think>Inneres Nachdenken</think>",
+                },
+                "canonical_form": "",
+                "label": "",
+            },
+        ],
+        "system": "",
+        "mask": "User",
+    },
+}
+
+# =============================================================================
+# FORMAT 4 TEST DATA
+# =============================================================================
+
+format4_data = {
+    "input": {
+        "conversations": [
+            {
+                "from": "User",
+                "value": "Plan:\n<think>First reflect</think>\nCode:\n```python\nprint('hi')\n```",
+                "canonical_form": "",
+                "label": "",
+            },
+            {"from": "Assistant", "value": "Here is the response.", "canonical_form": "", "label": ""},
+        ],
+        "system": "",
+        "mask": "User",
+    },
+    "correct_output": {
+        "conversations": [
+            {
+                "from": "User",
+                "value": "Plan:\n<think>First reflect</think>\nCode:\n```python\nprint('hi')\n```",
+                "translation": {
+                    "source": "Plan:\n<think>First reflect</think>\nCode:\n```python\nprint('hi')\n```",
+                    "target": "Plan:\n<think>Erste Überlegung</think>\nCode:\n```python\nprint('hi')\n```",
+                    "language": "German",
+                },
+                "canonical_form": "",
+                "label": "",
+            },
+            {
+                "from": "Assistant",
+                "value": "Here is the response.",
+                "translation": {
+                    "source": "Here is the response.",
+                    "target": "Hier ist die Antwort.",
+                    "language": "German",
+                },
+                "canonical_form": "",
+                "label": "",
+            },
+        ],
+        "system": "",
+        "mask": "User",
+    },
+    "incorrect_output": {
+        "conversations": [
+            {
+                "from": "User",
+                "value": "Plan:\n<think>First reflect</think>\nCode:\n```python\nprint('hi')\n```",
+                "translation": {
+                    "source": "Plan:\n<think>First reflect</think>\nCode:\n```python\nprint('hi')\n```",
+                    # Code preserved, but think content left untranslated and language wrong
+                    "target": "Plan:\n<think>First reflect</think>\nCode:\n```python\nprint('hi')\n```",
+                    "language": "French",
+                },
+                "canonical_form": "",
+                "label": "",
+            },
+            {
+                "from": "Assistant",
+                "value": "Here is the response.",
+                "translation": {
+                    "source": "Here is the response.",
+                    "target": "Hier ist die Antwort.",
+                    "language": "French",
+                },
+                "canonical_form": "",
+                "label": "",
+            },
+        ],
+        "system": "",
+        "mask": "User",
+    },
+}
+
+# =============================================================================
 # FORMAT 5 TEST DATA
 # =============================================================================
 
@@ -143,17 +366,17 @@ format5_data = {
     "input": {
         "expected_answer": "f(x) = 0 \\quad \\text{and} \\quad f(x) = \\dfrac{1}{3} \\quad \\text{and} \\quad f(x) = x^{2}",
         "input": "<|im_start|>system\n<|im_end|>\n<|im_start|>user\nSolve the following math problem. Make sure to put the answer (and only answer) inside \\boxed{}.\n\nFind all functions \\( f: \\mathbb{R} \\to \\mathbb{R} \\) such that:\n\\[\n(f(x) + f(y))(f(a) + f(b)) = f(xa + yb) + f(xb + ya)\n\\]<|im_end|>\n<|im_start|>assistant\n",
-        "output": "<think>\nI need to find all functions $f: \\mathbb{R} \\to \\mathbb{R}$ that satisfy the functional equation $(f(x) + f(y))(f(a) + f(b)) = f(xa + yb) + f(xb + ya)$.\n\nLet me try some substitutions to understand the structure. First, let me set $x = y = a = b = 0$:\n$(f(0) + f(0))(f(0) + f(0)) = f(0) + f(0)$\n$4f(0)^2 = 2f(0)$\n$2f(0)^2 = f(0)$\n$f(0)(2f(0) - 1) = 0$\n\nSo either $f(0) = 0$ or $f(0) = \\frac{1}{2}$.\n</think>\n\nI need to find all functions $f: \\mathbb{R} \\to \\mathbb{R}$ satisfying the functional equation.\n\nLet me start by setting $x = y = a = b = 0$:\n$(f(0) + f(0))(f(0) + f(0)) = f(0) + f(0)$\n\nThis gives us $4f(0)^2 = 2f(0)$, so $f(0)(2f(0) - 1) = 0$.\n\nTherefore $f(0) = 0$ or $f(0) = \\frac{1}{2}$.\n\nAfter further analysis with various substitutions, I can show that the solutions are:\n\n\\boxed{f(x) = 0 \\quad \\text{and} \\quad f(x) = \\dfrac{1}{3} \\quad \\text{and} \\quad f(x) = x^{2}}<|im_end|>",
+        "output": "<think>\nI need to find all functions $f: \\mathbb{R} \\to \\mathbb{R}$ that satisfy the functional equation $(f(x) + f(y))(f(a) + f(b)) = f(xa + yb) + f(xb + ya)$.\n\nLet me try some substitutions to understand the structure. First, let me set $x = y = a = b = 0$:\n$(f(0) + f(0))(f(0) + f(0)) = f(0) + f(0)$\n$4f(0)^2 = 2f(0)$\n$2f(0)^2 = f(0)$\nf(0)(2f(0) - 1) = 0\n\nSo either $f(0) = 0$ or $f(0) = \\frac{1}{2}$.\n</think>\n\nI need to find all functions $f: \\mathbb{R} \\to \\mathbb{R}$ satisfying the functional equation.\n\nLet me start by setting $x = y = a = b = 0$:\n$(f(0) + f(0))(f(0) + f(0)) = f(0) + f(0)$\n\nThis gives us $4f(0)^2 = 2f(0)$, so $f(0)(2f(0) - 1) = 0$.\n\nTherefore $f(0) = 0$ or $f(0) = \\frac{1}{2}$.\n\nAfter further analysis with various substitutions, I can show that the solutions are:\n\n\\boxed{f(x) = 0 \\quad \\text{and} \\quad f(x) = \\dfrac{1}{3} \\quad \\text{and} \\quad f(x) = x^{2}}<|im_end|>",
     },
     "correct_output": {
         "expected_answer": "f(x) = 0 \\quad \\text{and} \\quad f(x) = \\dfrac{1}{3} \\quad \\text{and} \\quad f(x) = x^{2}",
         "input": "<|im_start|>system\n<|im_end|>\n<|im_start|>user\nResuelve el siguiente problema de matemáticas. Asegúrate de poner la respuesta (y solo la respuesta) dentro de \\boxed{}.\n\nEncuentra todas las funciones \\( f: \\mathbb{R} \\to \\mathbb{R} \\) tales que:\n\\[\n(f(x) + f(y))(f(a) + f(b)) = f(xa + yb) + f(xb + ya)\n\\]<|im_end|>\n<|im_start|>assistant\n",
-        "output": "<think>\nI need to find all functions $f: \\mathbb{R} \\to \\mathbb{R}$ that satisfy the functional equation $(f(x) + f(y))(f(a) + f(b)) = f(xa + yb) + f(xb + ya)$.\n\nLet me try some substitutions to understand the structure. First, let me set $x = y = a = b = 0$:\n$(f(0) + f(0))(f(0) + f(0)) = f(0) + f(0)$\n$4f(0)^2 = 2f(0)$\n$2f(0)^2 = f(0)$\n$f(0)(2f(0) - 1) = 0$\n\nSo either $f(0) = 0$ or $f(0) = \\frac{1}{2}$.\n</think>\n\nNecesito encontrar todas las funciones $f: \\mathbb{R} \\to \\mathbb{R}$ que satisfacen la ecuación funcional.\n\nComencemos estableciendo $x = y = a = b = 0$:\n$(f(0) + f(0))(f(0) + f(0)) = f(0) + f(0)$\n\nEsto nos da $4f(0)^2 = 2f(0)$, entonces $f(0)(2f(0) - 1) = 0$.\n\nPor lo tanto $f(0) = 0$ o $f(0) = \\frac{1}{2}$.\n\nDespués de un análisis adicional con varias sustituciones, puedo mostrar que las soluciones son:\n\n\\boxed{f(x) = 0 \\quad \\text{and} \\quad f(x) = \\dfrac{1}{3} \\quad \\text{and} \\quad f(x) = x^{2}}<|im_end|>",
+        "output": "<think>\nI need to find all functions $f: \\mathbb{R} \\to \\mathbb{R}$ that satisfy the functional equation $(f(x) + f(y))(f(a) + f(b)) = f(xa + yb) + f(xb + ya)$.\n\nLet me try some substitutions to understand the structure. First, let me set $x = y = a = b = 0$:\n$(f(0) + f(0))(f(0) + f(0)) = f(0) + f(0)$\n$4f(0)^2 = 2f(0)$\n$2f(0)^2 = f(0)$\nf(0)(2f(0) - 1) = 0\n\nSo either $f(0) = 0$ or $f(0) = \\frac{1}{2}$.\n</think>\n\nNecesito encontrar todas las funciones $f: \\mathbb{R} \\to \\mathbb{R}$ que satisfacen la ecuación funcional.\n\nComencemos estableciendo $x = y = a = b = 0$:\n$(f(0) + f(0))(f(0) + f(0)) = f(0) + f(0)$\n\nEsto nos da $4f(0)^2 = 2f(0)$, entonces $f(0)(2f(0) - 1) = 0$.\n\nPor lo tanto $f(0) = 0$ o $f(0) = \\frac{1}{2}$.\n\nDespués de un análisis adicional con varias sustituciones, puedo mostrar que las soluciones son:\n\n\\boxed{f(x) = 0 \\quad \\text{and} \\quad f(x) = \\dfrac{1}{3} \\quad \\text{and} \\quad f(x) = x^{2}}<|im_end|>",
     },
     "incorrect_output": {
         "expected_answer": "f(x) = 0 \\quad \\text{and} \\quad f(x) = \\dfrac{1}{3} \\quad \\text{and} \\quad f(x) = x^{2}",
         "input": "<|im_start|>system\n<|im_end|>\n<|im_start|>user\nResuelve el siguiente problema de matemáticas. Asegúrate de poner la respuesta (y solo la respuesta) dentro de \\boxed{}.\n\nEncuentra todas las funciones \\( f: \\mathbb{R} \\to \\mathbb{R} \\) tales que:\n\\[\n(f(x) + f(y))(f(a) + f(b)) = f(xa + yb) + f(xb + ya)\n\\]<|im_end|>\n<|im_start|>assistant\n",
-        "output": "<think>\nNecesito encontrar todas las funciones $f: \\mathbb{R} \\to \\mathbb{R}$ que satisfacen la ecuación funcional $(f(x) + f(y))(f(a) + f(b)) = f(xa + yb) + f(xb + ya)$.\n\nPermíteme probar algunas sustituciones para entender la estructura. Primero, establecemos $x = y = a = b = 0$:\n$(f(0) + f(0))(f(0) + f(0)) = f(0) + f(0)$\n$4f(0)^2 = 2f(0)$\n$2f(0)^2 = f(0)$\n$f(0)(2f(0) - 1) = 0$\n\nEntonces $f(0) = 0$ o $f(0) = \\frac{1}{2}$.\n</think>\n\nNecesito encontrar todas las funciones $f: \\mathbb{R} \\to \\mathbb{R}$ que satisfacen la ecuación funcional.\n\nComencemos estableciendo $x = y = a = b = 0$:\n$(f(0) + f(0))(f(0) + f(0)) = f(0) + f(0)$\n\nEsto nos da $4f(0)^2 = 2f(0)$, entonces $f(0)(2f(0) - 1) = 0$.\n\nPor lo tanto $f(0) = 0$ o $f(0) = \\frac{1}{2}$.\n\nDespués de un análisis adicional con varias sustituciones, puedo mostrar que las soluciones son:\n\n\\boxed{f(x) = 0 \\quad \\text{and} \\quad f(x) = \\dfrac{1}{3} \\quad \\text{and} \\quad f(x) = x^{2}}<|im_end|>",
+        "output": "<think>\nNecesito encontrar todas las funciones $f: \\mathbb{R} \\to \\mathbb{R}$ que satisfacen la ecuación funcional $(f(x) + f(y))(f(a) + f(b)) = f(xa + yb) + f(xb + ya)$.\n\nPermíteme probar algunas sustituciones para entender la estructura. Primero, establecemos $x = y = a = b = 0$:\n$(f(0) + f(0))(f(0) + f(0)) = f(0) + f(0)$\n$4f(0)^2 = 2f(0)$\n$2f(0)^2 = f(0)$\nf(0)(2f(0) - 1) = 0$\n\nEntonces $f(0) = 0$ o $f(0) = \\frac{1}{2}$.\n</think>\n\nNecesito encontrar todas las funciones $f: \\mathbb{R} \\to \\mathbb{R}$ que satisfacen la ecuación funcional.\n\nComencemos estableciendo $x = y = a = b = 0$:\n$(f(0) + f(0))(f(0) + f(0)) = f(0) + f(0)$\n\nEsto nos da $4f(0)^2 = 2f(0)$, entonces $f(0)(2f(0) - 1) = 0$.\n\nPor lo tanto $f(0) = 0$ o $f(0) = \\frac{1}{2}$.\n\nDespués de un análisis adicional con varias sustituciones, puedo mostrar que las soluciones son:\n\n\\boxed{f(x) = 0 \\quad \\text{and} \\quad f(x) = \\dfrac{1}{3} \\quad \\text{and} \\quad f(x) = x^{2}}<|im_end|>",
     },
 }
 
@@ -195,7 +418,6 @@ format10_data = {
 # FEW-SHOT EXAMPLES FOR NEMO-SKILLS
 # =============================================================================
 
-# Convert format0 data to few-shot example format
 format0_translation_examples = [
     {
         "input_example": json.dumps(format0_data["input"], indent=2),
@@ -205,11 +427,37 @@ format0_translation_examples = [
     }
 ]
 
-# Convert format1 data to few-shot example format
 format1_translation_examples = [
     {
         "input_example": json.dumps(format1_data["input"], indent=2),
         "output_example": json.dumps(format1_data["correct_output"], indent=2),
+        "source_lang": "English",
+        "target_lang": "German",
+    }
+]
+
+format2_translation_examples = [
+    {
+        "input_example": json.dumps(format2_data["input"], indent=2),
+        "output_example": json.dumps(format2_data["correct_output"], indent=2),
+        "source_lang": "English",
+        "target_lang": "German",
+    }
+]
+
+format3_translation_examples = [
+    {
+        "input_example": json.dumps(format3_data["input"], indent=2),
+        "output_example": json.dumps(format3_data["correct_output"], indent=2),
+        "source_lang": "English",
+        "target_lang": "German",
+    }
+]
+
+format4_translation_examples = [
+    {
+        "input_example": json.dumps(format4_data["input"], indent=2),
+        "output_example": json.dumps(format4_data["correct_output"], indent=2),
         "source_lang": "English",
         "target_lang": "German",
     }
@@ -233,10 +481,12 @@ format10_translation_examples = [
     }
 ]
 
-# Examples map for nemo-skills integration
 examples_map = {
     "format0_translation_few_shot": format0_translation_examples,
     "format1_translation_few_shot": format1_translation_examples,
+    "format2_translation_few_shot": format2_translation_examples,
+    "format3_translation_few_shot": format3_translation_examples,
+    "format4_translation_few_shot": format4_translation_examples,
     "format5_translation_few_shot": format5_translation_examples,
     "format10_translation_few_shot": format10_translation_examples,
 }
