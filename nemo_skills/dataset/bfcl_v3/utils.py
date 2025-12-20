@@ -1,3 +1,17 @@
+# Copyright 2023 https://github.com/ShishirPatil/gorilla
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 # Copyright (c) 2024, NVIDIA CORPORATION.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,26 +33,7 @@ import copy
 import json
 import re
 
-from nemo_skills.dataset.bfcl_v3.constants import GORILLA_TO_OPENAPI
-
-
-def load_file(file_path, sort_by_id=False):
-    result = []
-    with open(file_path) as f:
-        file = f.readlines()
-        for line in file:
-            result.append(json.loads(line))
-
-    if sort_by_id:
-        result.sort(key="id")
-    return result
-
-
-def is_multi_turn(instance_id):
-    if "multi_turn" in instance_id:
-        return True
-    else:
-        return False
+from bfcl_eval.constants.type_mappings import GORILLA_TO_OPENAPI
 
 
 def _get_language_specific_hint(test_category):

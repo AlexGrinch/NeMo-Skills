@@ -41,7 +41,7 @@ DATASETS = [
         ],
     ),
     ("ifeval", ["test"]),
-    ("math", ["train", "test"]),
+    ("hendrycks_math", ["train", "test"]),
     ("math-odyssey", ["test"]),
     ("mawps", ["test"]),
     ("mbpp", ["test"]),
@@ -56,6 +56,9 @@ DATASETS = [
     ("gaokao2023en", ["test"]),
     ("college_math", ["test"]),
     ("comp-math-24-25", ["test"]),
+    ("mmau-pro", ["test"]),
+    ("audiobench", ["test"]),
+    ("librispeech-pc", ["test"]),
 ]
 
 
@@ -70,4 +73,5 @@ def test_dataset_init_defaults():
             "multichoice",
             "long-context",
             "tool",
+            "speechlm",
         ], f"{dataset} has invalid DATASET_GROUP"

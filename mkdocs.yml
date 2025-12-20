@@ -1,5 +1,5 @@
-site_name: NeMo-Skills
-site_url: https://nvidia.github.io/NeMo-Skills
+site_name: Nemo-Skills
+site_url: https://nvidia-nemo.github.io/Skills
 extra_css:
   - css/extra.css
 plugins:
@@ -52,7 +52,7 @@ markdown_extensions:
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - footnotes
 nav:
-  - NeMo-Skills: index.md
+  - Nemo-Skills: index.md
   - Getting started:
     - basics/index.md
     - Cluster configs: basics/cluster-configs.md
@@ -65,12 +65,12 @@ nav:
     - pipelines/index.md
     - Generation: pipelines/generation.md
     - Evaluation: pipelines/evaluation.md
-    - Checkpoint conversion: pipelines/checkpoint-conversion.md
     - LLM-as-a-judge: pipelines/llm-as-a-judge.md
     - Decontamination: pipelines/decontamination.md
-    - Training (NeMo-Aligner): pipelines/training.md
-    - Training (verl, OpenRLHF): pipelines/training-verl-openrlhf.md
+    - Training (NeMo-RL): pipelines/training.md
+    - Training (verl): pipelines/training-verl.md
     - Arbitrary commands: pipelines/run-cmd.md
+    - Starting a Server: pipelines/start-server.md
   - Evaluation:
     - evaluation/index.md
     - evaluation/natural-math.md
@@ -81,6 +81,7 @@ nav:
     - evaluation/long-context.md
     - evaluation/tool-calling.md
     - evaluation/multilingual.md
+    - evaluation/speech-audio.md
     - evaluation/other-benchmarks.md
     - evaluation/robustness.md
   - Agentic Inference:
@@ -90,22 +91,28 @@ nav:
     - tutorials/index.md
   - Papers & Releases:
     - releases/index.md
+    - Nemotron-Math-v2:
+      - releases/nemotron-math-v2/index.md
+      - Model evaluation: releases/nemotron-math-v2/evaluation.md
+      - Dataset construction: releases/nemotron-math-v2/dataset.md
+      - Model training: releases/nemotron-math-v2/training.md
+    - Nemotron-Math-Proofs: releases/nemotronmathproofs/index.md
     - OpenReasoning:
       - releases/openreasoning/index.md
-      - Model Evaluation: releases/openreasoning/evaluation.md
+      - Model evaluation: releases/openreasoning/evaluation.md
       - Dataset construction: releases/openreasoning/dataset.md
       - Model training: releases/openreasoning/training.md
     - OpenCodeReasoning:
       - releases/opencodereasoning/index.md
-      - Model Evaluation: releases/opencodereasoning/evaluation.md
+      - Model evaluation: releases/opencodereasoning/evaluation.md
       - Dataset construction: releases/opencodereasoning/dataset.md
     - OpenMathReasoning:
       - releases/openmathreasoning/index.md
-      - Model Evaluation: releases/openmathreasoning/evaluation.md
+      - Model evaluation: releases/openmathreasoning/evaluation.md
       - Dataset construction: releases/openmathreasoning/dataset.md
       - Model training: releases/openmathreasoning/training.md
     - OpenMathInstruct-2:
       - releases/openmathinstruct2/index.md
-      - Model Evaluation: releases/openmathinstruct2/evaluation.md
+      - Model evaluation: releases/openmathinstruct2/evaluation.md
       - Dataset construction: releases/openmathinstruct2/dataset.md
       - Model training: releases/openmathinstruct2/training.md

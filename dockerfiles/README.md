@@ -4,7 +4,7 @@ Some dockerfiles are directly included in this folder and for some others the in
 
 The dockerfiles can be built using the standard docker build command. e.g.,
 ```shell
-docker build -t igitman/nemo-skills:0.7.1 -f dockerfiles/Dockerfile.nemo-skills .
+docker build -t nemo-skills-image:0.7.1 -f dockerfiles/Dockerfile.nemo-skills .
 ```
 
 In addition, we provide a utility script which provides sane build defaults
@@ -32,12 +32,8 @@ We directly use official `nvcr.io/nvidia/tensorrt-llm/release:1.0.0` image for b
 
 ## Building sglang image
 
-We directly use official `lmsysorg/sglang:v0.5.3rc1-cu126` image.
-
-For arm64 we instead use `lmsysorg/sglang:blackwell-cu129-arm64` image.
+We directly use official `lmsysorg/sglang:v0.5.4` image.
 
 ## Building vllm image
 
-We directly use official `vllm/vllm-openai:v0.10.1.1` image.
-
-For arm64 we instead use `vllm/vllm-openai:v0.10.2` image.
+We use official `vllm/vllm-openai:v0.10.2` image with the additional `vllm[audio]` dependencies.

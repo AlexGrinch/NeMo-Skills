@@ -12,12 +12,21 @@ echo "Workers: $NUM_WORKERS, Nginx port: $NGINX_PORT"
 # Override nginx config for multi-worker mode (single mode uses original config)
 echo "Configuring nginx for multi-worker load balancing..."
 
-# Force session affinity settings: 1 process per worker with minimal cheaper
-UWSGI_PROCESSES=1
-UWSGI_CHEAPER=1
-export UWSGI_PROCESSES
-export UWSGI_CHEAPER
-echo "Forced UWSGI settings for session affinity: PROCESSES=$UWSGI_PROCESSES, CHEAPER=$UWSGI_CHEAPER"
+
+# Allow callers to opt-out of single-process state-preserving mode where each worker is given one process
+: "${STATEFUL_SANDBOX:=1}"
+if [ "$STATEFUL_SANDBOX" -eq 1 ]; then
+    UWSGI_PROCESSES=1
+    UWSGI_CHEAPER=1
+else
+    # In stateless mode, honour caller-supplied values
+    : "${UWSGI_PROCESSES:=1}"
+    : "${UWSGI_CHEAPER:=1}"
+fi
+
+export UWSGI_PROCESSES UWSGI_CHEAPER
+
+echo "UWSGI settings: PROCESSES=$UWSGI_PROCESSES, CHEAPER=$UWSGI_CHEAPER"
 
 # Validate and fix uwsgi configuration
 if [ -z "$UWSGI_PROCESSES" ]; then
@@ -276,6 +285,20 @@ echo "All workers are ready!"
 # Start nginx
 echo "Starting nginx on port $NGINX_PORT..."
 nginx
+
+# Enable network blocking for user code execution if requested
+# This MUST happen AFTER nginx/uwsgi start (they need sockets for API)
+# Using /etc/ld.so.preload ensures this cannot be bypassed by user code
+BLOCK_NETWORK_LIB="/usr/lib/libblock_network.so"
+if [ "${NEMO_SKILLS_SANDBOX_BLOCK_NETWORK:-0}" = "1" ]; then
+    if [ -f "$BLOCK_NETWORK_LIB" ]; then
+        echo "$BLOCK_NETWORK_LIB" > /etc/ld.so.preload
+        echo "Network blocking ENABLED: All new processes will have network blocked"
+        echo "  (API server sockets created before this, so API still works)"
+    else
+        echo "WARNING: Network blocking requested but $BLOCK_NETWORK_LIB not found"
+    fi
+fi
 
 echo "=== Multi-worker deployment ready ==="
 echo "Nginx load balancer: http://localhost:$NGINX_PORT"
