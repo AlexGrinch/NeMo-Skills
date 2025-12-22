@@ -381,6 +381,98 @@ format5_data = {
 }
 
 # =============================================================================
+# FORMAT 6 TEST DATA
+# =============================================================================
+
+format6_data = {
+    "input": {
+        "expected_answer": "\\boxed{42}",
+        "input": "<|im_start|>system\n<|im_end|>\n<|im_start|>user\nSolve for x in the equation $2^x = 42$.\n<|im_end|>\n<|im_start|>assistant\n",
+        "output": "<think>We isolate x by taking logs.</think>Final answer: \\boxed{42}<|im_end|>",
+    },
+    "correct_output": {
+        "expected_answer": "\\boxed{42}",
+        "input": "<|im_start|>system\n<|im_end|>\n<|im_start|>user\nLöse nach x in der Gleichung $2^x = 42$.\n<|im_end|>\n<|im_start|>assistant\n",
+        "output": "Reasoning: We isolate x by taking logs.\nSolution: \\boxed{42}<|im_end|>",
+    },
+    "incorrect_output": {
+        "expected_answer": "\\boxed{42}",
+        "input": "<|im_start|>system\n<|im_end|>\n<|im_start|>user\nLöse nach x in der Gleichung $2^x = 42$.\n<|im_end|>\n<|im_start|>assistant\n",
+        # Incorrect because think tags were not removed and no Reasoning: prefix
+        "output": "<think>We isolate x by taking logs.</think>Solution: \\boxed{42}<|im_end|>",
+    },
+}
+
+# =============================================================================
+# FORMAT 7 TEST DATA
+# =============================================================================
+
+format7_data = {
+    "input": {
+        "expected_answer": "\\boxed{5}",
+        "input": "<|im_start|>system\n<|im_end|>\n<|im_start|>user\nFind the integer $n$ such that $n+2=7$.\n<|im_end|>\n<|im_start|>assistant\n",
+        "output": "<think>We subtract 2 from both sides.</think>The answer is \\boxed{5}<|im_end|>",
+    },
+    "correct_output": {
+        "expected_answer": "\\boxed{5}",
+        "input": "<|im_start|>system\n<|im_end|>\n<|im_start|>user\nEncuentra el entero $n$ tal que $n+2=7$.\n<|im_end|>\n<|im_start|>assistant\n",
+        "output": "<think>Restamos 2 a ambos lados.</think>La respuesta es \\boxed{5}<|im_end|>",
+    },
+    "incorrect_output": {
+        "expected_answer": "\\boxed{5}",
+        "input": "<|im_start|>system\n<|im_end|>\n<|im_start|>user\nEncuentra el entero $n$ tal que $n+2=7$.\n<|im_end|>\n<|im_start|>assistant\n",
+        "output": "<think>We subtract 2 from both sides.</think>La respuesta es \\boxed{5}<|im_end|>",
+    },
+}
+
+# =============================================================================
+# FORMAT 8 TEST DATA
+# =============================================================================
+
+format8_data = {
+    "input": {
+        "expected_answer": "\\boxed{7}",
+        "input": "<|im_start|>system\n<|im_end|>\n<|im_start|>user\nCompute $3+4$.\n<|im_end|>\n<|im_start|>assistant\n",
+        "output": "<think>Add 3 and 4.</think>The answer is \\boxed{7}<|im_end|>",
+    },
+    "correct_output": {
+        "expected_answer": "\\boxed{7}",
+        "input": "<|im_start|>system\n<|im_end|>\n<|im_start|>user\nCalculez $3+4$.\n<|im_end|>\n<|im_start|>assistant\n",
+        # Inline, think removed, Explanation prefix, answer prefix
+        "output": "Explanation: Ajouter 3 et 4. The answer is: \\boxed{7}<|im_end|>",
+    },
+    "incorrect_output": {
+        "expected_answer": "\\boxed{7}",
+        "input": "<|im_start|>system\n<|im_end|>\n<|im_start|>user\nCalculez $3+4$.\n<|im_end|>\n<|im_start|>assistant\n",
+        # Incorrect because output has a newline and no Explanation prefix
+        "output": "The answer is: \\boxed{7}\n<|im_end|>",
+    },
+}
+
+# =============================================================================
+# FORMAT 9 TEST DATA
+# =============================================================================
+
+format9_data = {
+    "input": {
+        "expected_answer": "The value is \\boxed{10}",
+        "input": "<|im_start|>system\n<|im_end|>\n<|im_start|>user\nFind the value of $5+5$.\n<|im_end|>\n<|im_start|>assistant\n",
+        "output": "<think>We add 5 and 5.</think>Answer: The value is \\boxed{10}<|im_end|>",
+    },
+    "correct_output": {
+        "expected_answer": "Il valore è \\boxed{10}",
+        "input": "<|im_start|>system\n<|im_end|>\n<|im_start|>user\nTrova il valore di $5+5$.\n<|im_end|>\n<|im_start|>assistant\n",
+        "output": "<think>Sommiamo 5 e 5.</think>Risposta: Il valore è \\boxed{10}\nGlossary:\n- add: sommare\n- value: valore\n- answer: risposta<|im_end|>",
+    },
+    "incorrect_output": {
+        "expected_answer": "The value is \\boxed{10}",
+        "input": "<|im_start|>system\n<|im_end|>\n<|im_start|>user\nTrova il valore di $5+5$.\n<|im_end|>\n<|im_start|>assistant\n",
+        # Incorrect because expected_answer not translated and glossary has <3 items
+        "output": "<think>Sommiamo 5 e 5.</think>Risposta: The value is \\boxed{10}\nGlossary:\n- add: sommare<|im_end|>",
+    },
+}
+
+# =============================================================================
 # FORMAT 10 TEST DATA
 # =============================================================================
 
@@ -472,6 +564,42 @@ format5_translation_examples = [
     }
 ]
 
+format6_translation_examples = [
+    {
+        "input_example": json.dumps(format6_data["input"], indent=2),
+        "output_example": json.dumps(format6_data["correct_output"], indent=2),
+        "source_lang": "English",
+        "target_lang": "German",
+    }
+]
+
+format7_translation_examples = [
+    {
+        "input_example": json.dumps(format7_data["input"], indent=2),
+        "output_example": json.dumps(format7_data["correct_output"], indent=2),
+        "source_lang": "English",
+        "target_lang": "Spanish",
+    }
+]
+
+format8_translation_examples = [
+    {
+        "input_example": json.dumps(format8_data["input"], indent=2),
+        "output_example": json.dumps(format8_data["correct_output"], indent=2),
+        "source_lang": "English",
+        "target_lang": "French",
+    }
+]
+
+format9_translation_examples = [
+    {
+        "input_example": json.dumps(format9_data["input"], indent=2),
+        "output_example": json.dumps(format9_data["correct_output"], indent=2),
+        "source_lang": "English",
+        "target_lang": "Italian",
+    }
+]
+
 format10_translation_examples = [
     {
         "input_example": json.dumps(format10_data["input"], indent=2),
@@ -488,5 +616,9 @@ examples_map = {
     "format3_translation_few_shot": format3_translation_examples,
     "format4_translation_few_shot": format4_translation_examples,
     "format5_translation_few_shot": format5_translation_examples,
+    "format6_translation_few_shot": format6_translation_examples,
+    "format7_translation_few_shot": format7_translation_examples,
+    "format8_translation_few_shot": format8_translation_examples,
+    "format9_translation_few_shot": format9_translation_examples,
     "format10_translation_few_shot": format10_translation_examples,
 }

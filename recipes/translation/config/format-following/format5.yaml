@@ -1,16 +1,17 @@
-# format 5
+# format 5 (math baseline)
 # input:
 # {
 #   "expected_answer": "f(x) = 0 \\quad \\text{and} \\quad f(x) = \\dfrac{1}{2} \\quad \\text{and} \\quad f(x) = x^{2}",
 #   "input": "<|im_start|>system\n<|im_end|>\n<|im_start|>user\nSolve the following math problem. Make sure to put the answer (and only answer) inside \\boxed{}.\n\nFind all functions \\( f: \\mathbb{R} \\to \\mathbb{R} \\) such that:\n\\[\n(f(x) + f(y))(f(a) + f(b)) = f(xa + yb) + f(xb - ya)\n\\]<|im_end|>\n<|im_start|>assistant\n",
-#   "output": "<think>\nI need to find all positive integers \\( n \\) such that \\( 3^k \\) divides \\( 2^n - 1 \\) for a given positive integer \\( k \\). The problem says \"for a given positive integer \\( k \\)\", but it doesn't specify what \\( k \\) is. That seems odd.</think>f(x) = 0 \\quad \\text{and} \\quad f(x) = \\dfrac{1}{2} \\quad \\text{and} \\quad f(x) = x^{2}<|im_end|>"
+#   "output": "<think>...</think><final answer possibly with LaTeX><|im_end|>"
 # }
 #
 # formatting constraints:
-#   - do not translate text inside <think> and </think> tags (reasoning chains should remain unchanged)
-#   - do not translate LaTeX formulas (text between $ and $ should remain unchanged)
-#   - translate all other text to the target language
-#   - put translation as extra field "translation" in each of the conversation entries, keep all the other fields as-is
+#   - keep text inside <think>...</think> unchanged (no translation)
+#   - keep LaTeX intact (text between $...$, \(...\), \[...\], \boxed{}, \text{}, etc.)
+#   - translate all other text in "input" and the non-think portion of "output" to {target_lang}
+#   - keep "expected_answer" unchanged
+#   - return a json object with the same keys ("expected_answer", "input", "output"); do not add extra fields
 
 # Few-shot examples configuration
 few_shot_examples:
@@ -21,18 +22,19 @@ few_shot_examples:
   # this reuses the test data from test_data.py to avoid redundancy
   # and available as {examples} key in the final prompt
 
-system: You are an experienced translator that translates documents accurately into fluent text in target language, while following other formatting instructions in the prompt.
+system: You are an experienced translator for math problems. Translate visible text while preserving protected content.
 
 user: |-
-  You need to translate the {source_lang} source text in all "value" fields to {target_lang}.
+  You need to translate the {source_lang} math prompt and answer to {target_lang}.
 
   Please follow these formatting rules:
 
-  (1) For text between <think> and </think> tags: keep the original text, do not translate
-  (2) For LaTeX formulas (text between $ and $): keep the original formulas, do not translate
-  (3) For all other text in "value" fields: translate it to {target_lang}
-  (4) Return the translation as a json object, with an extra field "translation" in each conversation entry. Keep all input fields unchanged.
+  (1) For text between <think> and </think>: keep it exactly as-is (no translation)
+  (2) For LaTeX (e.g., $...$, \( ... \), \[ ... \], \boxed{...}, \text{...}): keep it exactly as-is
+  (3) Translate all other text in "input" and in the non-think portion of "output" to {target_lang}
+  (4) Keep "expected_answer" unchanged
+  (5) Return a json object with the same keys ("expected_answer", "input", "output"); do not add new fields
 
-  {examples}{source_lang} JSON input:
+  {examples}Here is the source json object:
 
   {src}
