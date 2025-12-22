@@ -30,7 +30,7 @@ user: |-
   Please follow these formatting rules:
 
   (1) For text between <think> and </think>: keep it exactly as-is (no translation)
-  (2) For LaTeX (e.g., $...$, \( ... \), \[ ... \], \boxed{...}, \text{...}): keep it exactly as-is
+  (2) For LaTeX (e.g., $...$, \( ... \), \[ ... \], \boxed{{...}}, \text{{...}}): keep it exactly as-is
   (3) Translate all other text in "input" and in the non-think portion of "output" to {target_lang}
   (4) Keep "expected_answer" unchanged
   (5) Return a json object with the same keys ("expected_answer", "input", "output"); do not add new fields
