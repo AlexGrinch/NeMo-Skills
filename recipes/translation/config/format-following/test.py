@@ -103,11 +103,95 @@ Here is the translation:
     return input_text, generation_correct, generation_incorrect
 
 
+def get_format11_test_data():
+    """Get Format11 test data as JSON strings."""
+
+    import json
+
+    from nemo_skills.prompt.few_shot_examples.format_translation import format11_data
+
+    input_text = json.dumps(format11_data["input"])
+
+    generation_correct = f"Here is the translation: {json.dumps(format11_data['correct_output'])}\n"
+
+    generation_incorrect = f"""I need to translate the text to Spanish with source/target structure.
+
+Here is the translation:
+{json.dumps(format11_data["incorrect_output"])}
+"""
+
+    return input_text, generation_correct, generation_incorrect
+
+
+def get_format12_test_data():
+    """Get Format12 test data as JSON strings."""
+
+    import json
+
+    from nemo_skills.prompt.few_shot_examples.format_translation import format12_data
+
+    input_text = json.dumps(format12_data["input"])
+
+    generation_correct = f"Here is the translation: {json.dumps(format12_data['correct_output'])}\n"
+
+    generation_incorrect = f"""I need to translate the text to Spanish with reasoning and answer separation.
+
+Here is the translation:
+{json.dumps(format12_data["incorrect_output"])}
+"""
+
+    return input_text, generation_correct, generation_incorrect
+
+
+def get_format13_test_data():
+    """Get Format13 test data as JSON strings."""
+
+    import json
+
+    from nemo_skills.prompt.few_shot_examples.format_translation import format13_data
+
+    input_text = json.dumps(format13_data["input"])
+
+    generation_correct = f"Here is the translation: {json.dumps(format13_data['correct_output'])}\n"
+
+    generation_incorrect = f"""I need to translate the text to Spanish with bilingual list format.
+
+Here is the translation:
+{json.dumps(format13_data["incorrect_output"])}
+"""
+
+    return input_text, generation_correct, generation_incorrect
+
+
+def get_format14_test_data():
+    """Get Format14 test data as JSON strings."""
+
+    import json
+
+    from nemo_skills.prompt.few_shot_examples.format_translation import format14_data
+
+    input_text = json.dumps(format14_data["input"])
+
+    generation_correct = f"Here is the translation: {json.dumps(format14_data['correct_output'])}\n"
+
+    generation_incorrect = f"""I need to translate only think tags to Spanish.
+
+Here is the translation:
+{json.dumps(format14_data["incorrect_output"])}
+"""
+
+    return input_text, generation_correct, generation_incorrect
+
+
 if __name__ == "__main__":
     from format0 import Format0Checker
     from format1 import Format1Checker
     from format5 import Format5Checker
     from format10 import Format10Checker
+    from format11 import Format11Checker
+    from format12 import Format12Checker
+    from format13 import Format13Checker
+    from format14 import Format14Checker
 
     print("=" * 80)
     print("TESTING FORMAT0 CHECKER")
@@ -174,13 +258,89 @@ if __name__ == "__main__":
     input_text11, fake_generation11_1, fake_generation11_2 = get_format10_test_data()
 
     print("=" * 80)
-    print("TESTING FORMAT11 FAKE_GENERATION_1 (should pass):")
+    print("TESTING FORMAT10 FAKE_GENERATION_1 (should pass):")
     print("=" * 80)
     result11_1 = checker11.check(input_text11, fake_generation11_1)
     print(f"Result: {result11_1}")
 
     print("\n" + "=" * 80)
-    print("TESTING FORMAT11 FAKE_GENERATION_2 (should fail):")
+    print("TESTING FORMAT10 FAKE_GENERATION_2 (should fail):")
     print("=" * 80)
     result11_2 = checker11.check(input_text11, fake_generation11_2)
     print(f"Result: {result11_2}")
+
+    print("\n" + "=" * 80)
+    print("TESTING FORMAT11 CHECKER")
+    print("=" * 80)
+
+    checker12 = Format11Checker()
+    input_text12, fake_generation12_1, fake_generation12_2 = get_format11_test_data()
+
+    print("=" * 80)
+    print("TESTING FORMAT11 FAKE_GENERATION_1 (should pass):")
+    print("=" * 80)
+    result12_1 = checker12.check(input_text12, fake_generation12_1)
+    print(f"Result: {result12_1}")
+
+    print("\n" + "=" * 80)
+    print("TESTING FORMAT11 FAKE_GENERATION_2 (should fail):")
+    print("=" * 80)
+    result12_2 = checker12.check(input_text12, fake_generation12_2)
+    print(f"Result: {result12_2}")
+
+    print("\n" + "=" * 80)
+    print("TESTING FORMAT12 CHECKER")
+    print("=" * 80)
+
+    checker13 = Format12Checker()
+    input_text13, fake_generation13_1, fake_generation13_2 = get_format12_test_data()
+
+    print("=" * 80)
+    print("TESTING FORMAT12 FAKE_GENERATION_1 (should pass):")
+    print("=" * 80)
+    result13_1 = checker13.check(input_text13, fake_generation13_1)
+    print(f"Result: {result13_1}")
+
+    print("\n" + "=" * 80)
+    print("TESTING FORMAT12 FAKE_GENERATION_2 (should fail):")
+    print("=" * 80)
+    result13_2 = checker13.check(input_text13, fake_generation13_2)
+    print(f"Result: {result13_2}")
+
+    print("\n" + "=" * 80)
+    print("TESTING FORMAT13 CHECKER")
+    print("=" * 80)
+
+    checker14 = Format13Checker()
+    input_text14, fake_generation14_1, fake_generation14_2 = get_format13_test_data()
+
+    print("=" * 80)
+    print("TESTING FORMAT13 FAKE_GENERATION_1 (should pass):")
+    print("=" * 80)
+    result14_1 = checker14.check(input_text14, fake_generation14_1)
+    print(f"Result: {result14_1}")
+
+    print("\n" + "=" * 80)
+    print("TESTING FORMAT13 FAKE_GENERATION_2 (should fail):")
+    print("=" * 80)
+    result14_2 = checker14.check(input_text14, fake_generation14_2)
+    print(f"Result: {result14_2}")
+
+    print("\n" + "=" * 80)
+    print("TESTING FORMAT14 CHECKER")
+    print("=" * 80)
+
+    checker15 = Format14Checker()
+    input_text15, fake_generation15_1, fake_generation15_2 = get_format14_test_data()
+
+    print("=" * 80)
+    print("TESTING FORMAT14 FAKE_GENERATION_1 (should pass):")
+    print("=" * 80)
+    result15_1 = checker15.check(input_text15, fake_generation15_1)
+    print(f"Result: {result15_1}")
+
+    print("\n" + "=" * 80)
+    print("TESTING FORMAT14 FAKE_GENERATION_2 (should fail):")
+    print("=" * 80)
+    result15_2 = checker15.check(input_text15, fake_generation15_2)
+    print(f"Result: {result15_2}")
