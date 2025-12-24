@@ -472,6 +472,39 @@ format9_data = {
     },
 }
 
+
+# =============================================================================
+# FORMAT 109 TEST DATA
+# =============================================================================
+
+format109_data = {
+    "input": {
+        "expected_answer": "The value is \\boxed{10}",
+        "input": "<|im_start|>system\n<|im_end|>\n<|im_start|>user\nFind the value of $5+5$.\n<|im_end|>\n<|im_start|>assistant\n",
+        "output": "<think>We add 5 and 5.</think>Answer: The value is \\boxed{10}<|im_end|>",
+    },
+    "correct_output": {
+        "expected_answer": "Il valore è \\boxed{10}",
+        "input": "<|im_start|>system\n<|im_end|>\n<|im_start|>user\nTrova il valore di $5+5$.\n<|im_end|>\n<|im_start|>assistant\n",
+        "output": "<think>Sommiamo 5 e 5.</think>Risposta: Il valore è \\boxed{10}<|im_end|>",
+        "glossary": [
+            "- add: sommare",
+            "- value: valore",
+            "- answer: risposta",
+        ],
+    },
+    "incorrect_output": {
+        "expected_answer": "The value is \\boxed{10}",
+        "input": "<|im_start|>system\n<|im_end|>\n<|im_start|>user\nTrova il valore di $5+5$.\n<|im_end|>\n<|im_start|>assistant\n",
+        # Incorrect: expected_answer not translated and glossary has <3 items
+        "output": "<think>Sommiamo 5 e 5.</think>Risposta: The value is \\boxed{10}<|im_end|>",
+        "glossary": [
+            "- add: sommare",
+            "- value: valore",
+        ],
+    },
+}
+
 # =============================================================================
 # FORMAT 10 TEST DATA
 # =============================================================================
@@ -600,6 +633,16 @@ format9_translation_examples = [
     }
 ]
 
+
+format109_translation_examples = [
+    {
+        "input_example": json.dumps(format109_data["input"], indent=2),
+        "output_example": json.dumps(format109_data["correct_output"], indent=2),
+        "source_lang": "English",
+        "target_lang": "Italian",
+    }
+]
+
 format10_translation_examples = [
     {
         "input_example": json.dumps(format10_data["input"], indent=2),
@@ -620,5 +663,6 @@ examples_map = {
     "format7_translation_few_shot": format7_translation_examples,
     "format8_translation_few_shot": format8_translation_examples,
     "format9_translation_few_shot": format9_translation_examples,
+    "format109_translation_few_shot": format109_translation_examples,
     "format10_translation_few_shot": format10_translation_examples,
 }
