@@ -1,0 +1,47 @@
+# format 11
+# {
+#   "problem": "Which of the following best describes the concept of the digital divide and its impact on global inequality in the 21st century?\nA: The digital divide refers to the gap between those who have ready access to computers and the internet and those who do not, often exacerbating social and economic inequalities.\nB: The digital divide is the difference in technological skills between younger and older generations, leading to a generational gap in employment opportunities.",
+#   "generation": "<think>\nI need to solve this problem about the digital divide and its impact on global inequality. The question asks which option best describes the concept and its impact.\n\nOption A says: \"The digital divide refers to the gap between those who have ready access to computers and the internet and those who do not, often exacerbating social and economic inequalities.\"\n\nThis sounds right. It mentions access to computers and the internet, and it talks about exacerbating social and economic inequalities.\n\nI think A is the answer.\n</think>\nA\n\n\\boxed{\\text{A}}",
+#   "expected_answer": "\\text{A}",
+#   "majority_res": "8/8",
+#   "topic": "history",
+#   "subtopic": "neo_colonialism",
+#   "difficulty": "complex"
+# }
+#
+# formatting constraints:
+#   - for problem, generation, and expected_answer fields, create a nested object with "source" and "target" keys
+#   - the "source" key should contain the original text
+#   - the "target" key should contain the translation to {target_lang}
+#   - preserve all new-lines and whitespaces
+#   - preserve all latex-like formatting, for example \boxed{} and \text{}
+#   - return the translation as a json object
+#   - keep all the other fields as-is
+
+# Few-shot examples configuration
+few_shot_examples:
+  prefix: "Here is an example to illustrate the formatting rules:\n\n"
+  template: "Input ({source_lang}):\n{input_example}\n\nOutput ({target_lang}):\n{output_example}\n\n"
+  suffix: "Now translate the following:\n\n"
+  examples_type: "format11_translation_few_shot"
+  # this reuses the test data from test_data.py to avoid redundancy
+  # and available as {examples} key in the final prompt
+
+system: You are an experienced translator that translates documents accurately into fluent text in target language, while following other formatting instructions in the prompt.
+
+user: |-
+  You need to translate the {source_lang} source text to {target_lang}.
+
+  Please follow these formatting rules:
+
+  (1) For the problem, generation, and expected_answer fields: create a nested object with "source" and "target" keys
+  (2) The "source" key should contain the original text
+  (3) The "target" key should contain the translation to {target_lang}
+  (4) Preserve all new-lines and whitespaces
+  (5) Preserve all latex-like formatting, for example \boxed{{}} and \text{{}}
+  (6) Return the translation as a json object
+  (7) Keep all the other fields as-is
+
+  {examples}Here is the source json object:
+
+  {src}

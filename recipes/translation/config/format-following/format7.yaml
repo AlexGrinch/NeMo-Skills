@@ -1,0 +1,41 @@
+# format 7 (math: translate think, preserve LaTeX, require answer prefix)
+# input schema matches format5:
+# {
+#   "expected_answer": "...",
+#   "input": "<|im_start|>system...<|im_start|>user\n<problem text>\n<|im_end|>\n<|im_start|>assistant\n",
+#   "output": "<think>...</think><final answer with LaTeX><|im_end|>"
+# }
+#
+# formatting constraints:
+#   - keep <think> tags but translate their content to {target_lang}
+#   - keep all LaTeX intact ($...$, \(...\), \[...\], \boxed{...}, \text{...})
+#   - translate all other text in "input" and the non-LaTeX parts of "output" to {target_lang}
+#   - prepend "Answer:" before the final answer text in "output" (outside think)
+#   - keep "expected_answer" unchanged
+#   - return a json object with the same keys ("expected_answer", "input", "output"); do not add extra fields
+#
+
+few_shot_examples:
+  prefix: "Here is an example to illustrate the formatting rules:\n\n"
+  template: "Input ({source_lang}):\n{input_example}\n\nOutput ({target_lang}):\n{output_example}\n\n"
+  suffix: "Now translate the following:\n\n"
+  examples_type: "format7_translation_few_shot"
+
+system: You are an experienced translator for math problems. Translate everything except LaTeX, including the reasoning inside <think>.
+
+user: |-
+  You need to translate the {source_lang} math prompt and answer to {target_lang}.
+
+  Please follow these formatting rules:
+
+  (1) Keep <think> and </think> tags, but translate the text inside them to {target_lang}
+  (2) Preserve LaTeX exactly (e.g., $...$, \( ... \), \[ ... \], \boxed{{...}}, \text{{...}})
+  (3) Translate all other text in "input" and "output" to {target_lang}
+  (4) Keep "expected_answer" unchanged
+  (5) Return a json object with the same keys ("expected_answer", "input", "output"); do not add new fields
+
+  {examples}Source text ({source_lang}):
+
+  ```json
+  {src}
+  ```

@@ -1,0 +1,45 @@
+# format 6 (math: replace think tags with "Reasoning:", add "Solution:" label, no extra line breaks)
+# input:
+# {
+#   "expected_answer": "...",
+#   "input": "<|im_start|>system\n...<|im_start|>user\n<problem text with LaTeX>\n<|im_end|>\n<|im_start|>assistant\n",
+#   "output": "<think>...</think><final answer possibly with LaTeX><|im_end|>"
+# }
+#
+# formatting constraints:
+#   - replace "<think>..." with "Reasoning: ..." (DON'T translate the reasoning text itself)
+#   - replace "</think>" with nothing
+#   - add "Solution: " at the start of the final answer (after reasoning, before the actual answer)
+#   - remove any blank lines (keep only single line breaks between sections)
+#   - translate all other text in "input" and in "output" (except the reasoning part)
+#   - keep all LaTeX intact (text between $...$, \(...\), \[...\], \boxed{}, \text{}, etc.)
+#   - leave "expected_answer" unchanged (including LaTeX)
+#   - return a json object with the same keys; do not add extra fields
+#
+
+# Few-shot examples configuration
+few_shot_examples:
+  prefix: "Here is an example to illustrate the formatting rules:\n\n"
+  template: "Input ({source_lang}):\n{input_example}\n\nOutput ({target_lang}):\n{output_example}\n\n"
+  suffix: "Now translate the following:\n\n"
+  examples_type: "format6_translation_few_shot"
+
+system: You are an experienced translator who handles math problems and restructures their format.
+
+user: |-
+  You need to translate the {source_lang} math prompt and answer to {target_lang}.
+
+  Please follow these formatting rules:
+
+  (1) In "output", replace "<think>" with "Reasoning: " and remove "</think>" entirely
+      - DON'T translate the text that was inside the <think> tags - keep it in {source_lang}
+  (2) Add "Solution: " right after the reasoning, before the final answer
+  (3) Remove all blank lines in "output" (keep only single line breaks between sections)
+  (4) Translate all other text to {target_lang} (in "input" and the non-reasoning parts of "output")
+  (5) Keep all LaTeX exactly as-is (e.g., $...$, \( ... \), \[ ... \], \boxed{{...}}, \text{{...}})
+  (6) Keep "expected_answer" unchanged
+  (7) Return a json object with the same keys ("expected_answer", "input", "output"); do not add new fields
+
+  {examples}{source_lang} JSON object:
+
+  {src}

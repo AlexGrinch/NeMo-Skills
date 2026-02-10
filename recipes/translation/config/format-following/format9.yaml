@@ -1,0 +1,36 @@
+# format 9 (math, add glossary; translate expected_answer; preserve LaTeX)
+# input schema matches format5:
+# {
+#   "expected_answer": "...",
+#   "input": "<|im_start|>system...<|im_start|>user\n<problem text>\n<|im_end|>\n<|im_start|>assistant\n",
+#   "output": "<think>...</think><final answer with LaTeX><|im_end|>"
+# }
+#
+# formatting constraints:
+#   - translate all non-LaTeX text in "input", "output", AND "expected_answer" to {target_lang}; keep LaTeX exactly
+#   - append a glossary section to the translated "output" with at least 3 bullet items in the form "- source: target"
+#   - keep <think> tags and their content (translate the content) in place
+#   - return a json object with the same keys ("expected_answer", "input", "output"); do not add extra fields
+#
+
+few_shot_examples:
+  prefix: "Here is an example to illustrate the formatting rules:\n\n"
+  template: "Input ({source_lang}):\n{input_example}\n\nOutput ({target_lang}):\n{output_example}\n\n"
+  suffix: "Now translate the following:\n\n"
+  examples_type: "format9_translation_few_shot"
+
+system: You are an experienced translator for math problems. Translate all non-LaTeX text (including expected_answer), keep LaTeX, and add a concise glossary.
+
+user: |-
+  You need to translate the {source_lang} math prompt and answer to {target_lang}.
+
+  Please follow these formatting rules:
+
+  (1) Translate all non-LaTeX text in "input", "output", AND "expected_answer" to {target_lang}; preserve LaTeX exactly (e.g., $...$, \( ... \), \[ ... \], \boxed{{...}}, \text{{...}})
+  (2) Keep <think> and </think> tags; translate the text inside them
+  (3) Append a glossary section to the translated "output" with at least 3 bullet items, each formatted as "- source: target"
+  (4) Return a json object with the same keys ("expected_answer", "input", "output"); do not add new fields
+
+  {examples}Please translate this:
+
+  {src}

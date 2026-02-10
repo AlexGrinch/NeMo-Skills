@@ -711,6 +711,120 @@ format14_data = {
 }
 
 # =============================================================================
+# FORMAT NANO TEST DATA
+# =============================================================================
+
+format_nano_data = {
+    "input": {
+        "problem": "**Question:** Part of plant used for culturing is called\n\nA. Scion\nB. Explant\nC. Stock\nD. Callus\n\nA) Scion\nB) Explant\nC) Stock\nD) Callus",
+        "is_MCQ": True,
+        "has_tool": False,
+        "expected_answer": "B",
+        "messages": [
+            {
+                "role": "user",
+                "content": "Answer the following multiple choice question. The last line of your response should be in the following format: 'Answer: A/B/C/D' (e.g. 'Answer: A').\n\n**Question:** Part of plant used for culturing is called\n\nA. Scion\nB. Explant\nC. Stock\nD. Callus\n\nA) Scion\nB) Explant\nC) Stock\nD) Callus",
+            },
+            {
+                "role": "assistant",
+                "content": "Answer: B",
+                "reasoning_content": 'We need to answer: "Part of plant used for culturing is called ..."\n\nWe need to consider plant tissue culture terminology. In plant tissue culture, the piece of plant tissue placed in culture medium is called an "explant". A "scion" is a piece of a plant used in grafting (the top part). "Stock" is the bottom part (rootstock). "Callus" is undifferentiated mass of cells that forms from an excised explant under culture conditions. So the correct answer is "Explant". So answer "B".\n\nBut we must respond with final answer line: "Answer: B". They gave both alphabet options and letter list; either "B" is correct. So final answer: "Answer: B".',
+            },
+        ],
+        "metadata": {
+            "uuid": "2a574afa-abc2-439d-83cb-6447270689f2",
+            "turn_token_count": [
+                {"reasoning": 0, "content": 88, "tool_calls": 0},
+                {"reasoning": 151, "content": 3, "tool_calls": 0},
+            ],
+            "all_turns_token_count": {"reasoning": 151, "content": 91, "tool_calls": 0, "all": 242},
+            "processing_steps": [
+                "reasoning_extraction",
+                "think_tag_cleaning",
+                "identity_propaganda_check",
+                "token_counting",
+            ],
+            "source_file": "vedantu_chemistry_mcq_filtered_all_decontaminated_kept.jsonl",
+            "domain": "multilingual_stem",
+        },
+    },
+    "correct_output": {
+        "problem": "**Question:** Part of plant used for culturing is called\n\nA. Scion\nB. Explant\nC. Stock\nD. Callus\n\nA) Scion\nB) Explant\nC) Stock\nD) Callus",
+        "is_MCQ": True,
+        "has_tool": False,
+        "expected_answer": "B",
+        "messages": [
+            {
+                "role": "user",
+                "content": "Answer the following multiple choice question. The last line of your response should be in the following format: 'Answer: A/B/C/D' (e.g. 'Answer: A').\n\n**Question:** Part of plant used for culturing is called\n\nA. Scion\nB. Explant\nC. Stock\nD. Callus\n\nA) Scion\nB) Explant\nC) Stock\nD) Callus",
+                "translation": "Responda la siguiente pregunta de opción múltiple. La última línea de su respuesta debe estar en el siguiente formato: 'Respuesta: A/B/C/D' (por ejemplo, 'Respuesta: A').\n\n**Pregunta:** La parte de la planta utilizada para el cultivo se llama\n\nA. Injerto\nB. Explante\nC. Portainjerto\nD. Callo\n\nA) Injerto\nB) Explante\nC) Portainjerto\nD) Callo",
+            },
+            {
+                "role": "assistant",
+                "content": "Answer: B",
+                "reasoning_content": 'We need to answer: "Part of plant used for culturing is called ..."\n\nWe need to consider plant tissue culture terminology. In plant tissue culture, the piece of plant tissue placed in culture medium is called an "explant". A "scion" is a piece of a plant used in grafting (the top part). "Stock" is the bottom part (rootstock). "Callus" is undifferentiated mass of cells that forms from an excised explant under culture conditions. So the correct answer is "Explant". So answer "B".\n\nBut we must respond with final answer line: "Answer: B". They gave both alphabet options and letter list; either "B" is correct. So final answer: "Answer: B".',
+                "translation": {
+                    "content": "Respuesta: B",
+                    "reasoning_content": 'Necesitamos responder: "La parte de la planta utilizada para el cultivo se llama ..."\n\nNecesitamos considerar la terminología del cultivo de tejidos vegetales. En el cultivo de tejidos vegetales, el trozo de tejido vegetal colocado en medio de cultivo se llama "explante". Un "injerto" es un trozo de planta utilizado en injertos (la parte superior). "Portainjerto" es la parte inferior (portainjerto). "Callo" es una masa indiferenciada de células que se forma a partir de un explante escindido bajo condiciones de cultivo. Entonces la respuesta correcta es "Explante". Así que la respuesta es "B".\n\nPero debemos responder con la línea de respuesta final: "Respuesta: B". Dieron tanto opciones alfabéticas como lista de letras; cualquiera de las dos "B" es correcta. Así que la respuesta final: "Respuesta: B".',
+                },
+            },
+        ],
+        "metadata": {
+            "uuid": "2a574afa-abc2-439d-83cb-6447270689f2",
+            "turn_token_count": [
+                {"reasoning": 0, "content": 88, "tool_calls": 0},
+                {"reasoning": 151, "content": 3, "tool_calls": 0},
+            ],
+            "all_turns_token_count": {"reasoning": 151, "content": 91, "tool_calls": 0, "all": 242},
+            "processing_steps": [
+                "reasoning_extraction",
+                "think_tag_cleaning",
+                "identity_propaganda_check",
+                "token_counting",
+            ],
+            "source_file": "vedantu_chemistry_mcq_filtered_all_decontaminated_kept.jsonl",
+            "domain": "multilingual_stem",
+        },
+    },
+    "incorrect_output": {
+        "problem": "**Question:** Part of plant used for culturing is called\n\nA. Scion\nB. Explant\nC. Stock\nD. Callus\n\nA) Scion\nB) Explant\nC) Stock\nD) Callus",
+        "is_MCQ": True,
+        "has_tool": False,
+        "expected_answer": "B",
+        "messages": [
+            {
+                "role": "user",
+                "content": "Answer the following multiple choice question. The last line of your response should be in the following format: 'Answer: A/B/C/D' (e.g. 'Answer: A').\n\n**Question:** Part of plant used for culturing is called\n\nA. Scion\nB. Explant\nC. Stock\nD. Callus\n\nA) Scion\nB) Explant\nC) Stock\nD) Callus",
+                "translation": "Responda la siguiente pregunta de opción múltiple. La última línea de su respuesta debe estar en el siguiente formato: 'Respuesta: A/B/C/D' (por ejemplo, 'Respuesta: A').\n\n**Pregunta:** La parte de la planta utilizada para el cultivo se llama\n\nA. Injerto\nB. Explante\nC. Portainjerto\nD. Callo\n\nA) Injerto\nB) Explante\nC) Portainjerto\nD) Callo",
+            },
+            {
+                "role": "assistant",
+                "content": "Answer: B",
+                "reasoning_content": 'We need to answer: "Part of plant used for culturing is called ..."\n\nWe need to consider plant tissue culture terminology. In plant tissue culture, the piece of plant tissue placed in culture medium is called an "explant". A "scion" is a piece of a plant used in grafting (the top part). "Stock" is the bottom part (rootstock). "Callus" is undifferentiated mass of cells that forms from an excised explant under culture conditions. So the correct answer is "Explant". So answer "B".\n\nBut we must respond with final answer line: "Answer: B". They gave both alphabet options and letter list; either "B" is correct. So final answer: "Answer: B".',
+                # Incorrect: translation is a string instead of an object with content and reasoning_content
+                "translation": "Respuesta: B",
+            },
+        ],
+        "metadata": {
+            "uuid": "2a574afa-abc2-439d-83cb-6447270689f2",
+            "turn_token_count": [
+                {"reasoning": 0, "content": 88, "tool_calls": 0},
+                {"reasoning": 151, "content": 3, "tool_calls": 0},
+            ],
+            "all_turns_token_count": {"reasoning": 151, "content": 91, "tool_calls": 0, "all": 242},
+            "processing_steps": [
+                "reasoning_extraction",
+                "think_tag_cleaning",
+                "identity_propaganda_check",
+                "token_counting",
+            ],
+            "source_file": "vedantu_chemistry_mcq_filtered_all_decontaminated_kept.jsonl",
+            "domain": "multilingual_stem",
+        },
+    },
+}
+
+# =============================================================================
 # FEW-SHOT EXAMPLES FOR NEMO-SKILLS
 # =============================================================================
 
@@ -859,6 +973,15 @@ format14_translation_examples = [
     }
 ]
 
+format_nano_translation_examples = [
+    {
+        "input_example": json.dumps(format_nano_data["input"], indent=2),
+        "output_example": json.dumps(format_nano_data["correct_output"], indent=2),
+        "source_lang": "English",
+        "target_lang": "Spanish",
+    }
+]
+
 examples_map = {
     "format0_translation_few_shot": format0_translation_examples,
     "format1_translation_few_shot": format1_translation_examples,
@@ -876,4 +999,5 @@ examples_map = {
     "format12_translation_few_shot": format12_translation_examples,
     "format13_translation_few_shot": format13_translation_examples,
     "format14_translation_few_shot": format14_translation_examples,
+    "format_nano_translation_few_shot": format_nano_translation_examples,
 }
