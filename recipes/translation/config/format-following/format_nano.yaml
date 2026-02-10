@@ -1,0 +1,80 @@
+# format nano
+# input:
+# {
+#   "problem": "**Question:** Part of plant used for culturing is called\n\nA. Scion\nB. Explant\nC. Stock\nD. Callus\n\nA) Scion\nB) Explant\nC) Stock\nD) Callus",
+#   "is_MCQ": true,
+#   "has_tool": false,
+#   "expected_answer": "B",
+#   "messages": [
+#     {
+#       "role": "user",
+#       "content": "Answer the following multiple choice question. The last line of your response should be in the following format: 'Answer: A/B/C/D' (e.g. 'Answer: A').\n\n**Question:** Part of plant used for culturing is called\n\nA. Scion\nB. Explant\nC. Stock\nD. Callus\n\nA) Scion\nB) Explant\nC) Stock\nD) Callus"
+#     },
+#     {
+#       "role": "assistant",
+#       "content": "Answer: B",
+#       "reasoning_content": "We need to answer: \"Part of plant used for culturing is called ...\"\n\nWe need to consider plant tissue culture terminology. In plant tissue culture, the piece of plant tissue placed in culture medium is called an \"explant\". A \"scion\" is a piece of a plant used in grafting (the top part). \"Stock\" is the bottom part (rootstock). \"Callus\" is undifferentiated mass of cells that forms from an excised explant under culture conditions. So the correct answer is \"Explant\". So answer \"B\".\n\nBut we must respond with final answer line: \"Answer: B\". They gave both alphabet options and letter list; either \"B\" is correct. So final answer: \"Answer: B\"."
+#     }
+#   ],
+#   "metadata": {
+#     "uuid": "2a574afa-abc2-439d-83cb-6447270689f2",
+#     "turn_token_count": [
+#       {
+#         "reasoning": 0,
+#         "content": 88,
+#         "tool_calls": 0
+#       },
+#       {
+#         "reasoning": 151,
+#         "content": 3,
+#         "tool_calls": 0
+#       }
+#     ],
+#     "all_turns_token_count": {
+#       "reasoning": 151,
+#       "content": 91,
+#       "tool_calls": 0,
+#       "all": 242
+#     },
+#     "processing_steps": [
+#       "reasoning_extraction",
+#       "think_tag_cleaning",
+#       "identity_propaganda_check",
+#       "token_counting"
+#     ],
+#     "source_file": "vedantu_chemistry_mcq_filtered_all_decontaminated_kept.jsonl",
+#     "domain": "multilingual_stem"
+#   }
+# }
+#
+# formatting constraints:
+#   - translate messages[0].content (user message)
+#   - translate messages[1].content (assistant answer)
+#   - translate messages[1].reasoning_content (assistant reasoning)
+#   - add translation as extra field "translation" containing {"content": translated_content, "reasoning_content": translated_reasoning} in messages[1]
+#   - add translation as extra field "translation" containing translated_content in messages[0]
+#   - keep all other fields unchanged (problem, is_MCQ, has_tool, expected_answer, metadata, role fields)
+
+# Few-shot examples configuration
+few_shot_examples:
+  prefix: "Here is an example to illustrate the formatting rules:\n\n"
+  template: "Input ({source_lang}):\n{input_example}\n\nOutput ({target_lang}):\n{output_example}\n\n"
+  suffix: "Now translate the following:\n\n"
+  examples_type: "format_nano_translation_few_shot"
+  # this reuses the test data from test_data.py to avoid redundancy
+  # and available as {examples} key in the final prompt
+
+system: You are an experienced translator that translates documents accurately into fluent text in target language, while following other formatting instructions in the prompt.
+
+user: |-
+  You need to translate some {source_lang} source text to {target_lang}.
+
+  Please follow these formatting rules:
+
+  (1) Translate messages[0].content field to {target_lang}
+  (2) Translate messages[1].content field to {target_lang}
+  (3) Translate messages[1].reasoning_content field to {target_lang}
+  (4) Return the translation as a json object, with an extra field "translation" in each message entry. For messages[0], translation should be a string with the translated content. For messages[1], translation should be an object with "content" and "reasoning_content" fields.
+  (5) Keep all input fields unchanged (problem, is_MCQ, has_tool, expected_answer, metadata, role fields).
+
+  {examples}{source_lang}: {src}
