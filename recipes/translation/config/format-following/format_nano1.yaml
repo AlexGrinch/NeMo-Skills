@@ -1,0 +1,40 @@
+# format nano1 (simple)
+# input:
+# {
+#   "problem": "...",
+#   "generation": "..."
+# }
+#
+# formatting constraints:
+#   - translate problem
+#   - translate generation
+#   - keep original problem and generation unchanged
+#   - add a top-level "translation" object with:
+#       - "problem": translated problem
+#       - "generation": translated generation
+
+# Few-shot examples configuration
+few_shot_examples:
+  prefix: "Here is an example to illustrate the formatting rules:\n\n"
+  template: "Input ({source_lang}):\n{input_example}\n\nOutput ({target_lang}):\n{output_example}\n\n"
+  suffix: "Now translate the following:\n\n"
+  examples_type: "format_nano1_translation_few_shot"
+  # this reuses the test data from test_data.py to avoid redundancy
+  # and available as {examples} key in the final prompt
+
+system: You are an experienced translator that translates documents accurately into fluent text in target language, while following other formatting instructions in the prompt.
+
+user: |-
+  You need to translate some {source_lang} source text to {target_lang}.
+
+  Please follow these formatting rules:
+
+  (1) Translate the top-level "problem" field to {target_lang}.
+  (2) Translate the top-level "generation" field to {target_lang}.
+  (3) Keep the original "problem" and "generation" fields unchanged.
+  (4) Return a json object with an extra top-level field "translation".
+  (5) "translation" must be an object with exactly two fields:
+      - "problem": translated problem
+      - "generation": translated generation
+
+  {examples}{source_lang}: {src}

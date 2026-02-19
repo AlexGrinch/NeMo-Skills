@@ -824,6 +824,30 @@ format_nano_data = {
     },
 }
 
+format_nano1_data = {
+    "input": {
+        "problem": "**Question:** Part of plant used for culturing is called\n\nA. Scion\nB. Explant\nC. Stock\nD. Callus",
+        "generation": "Answer: B",
+    },
+    "correct_output": {
+        "problem": "**Question:** Part of plant used for culturing is called\n\nA. Scion\nB. Explant\nC. Stock\nD. Callus",
+        "generation": "Answer: B",
+        "translation": {
+            "problem": "**Pregunta:** La parte de la planta utilizada para el cultivo se llama\n\nA. Injerto\nB. Explante\nC. Portainjerto\nD. Callo",
+            "generation": "Respuesta: B",
+        },
+    },
+    "incorrect_output": {
+        # Incorrect because original fields were overwritten instead of preserved
+        "problem": "**Pregunta:** La parte de la planta utilizada para el cultivo se llama\n\nA. Injerto\nB. Explante\nC. Portainjerto\nD. Callo",
+        "generation": "Respuesta: B",
+        "translation": {
+            "problem": "**Pregunta:** La parte de la planta utilizada para el cultivo se llama\n\nA. Injerto\nB. Explante\nC. Portainjerto\nD. Callo",
+            "generation": "Respuesta: B",
+        },
+    },
+}
+
 # =============================================================================
 # FEW-SHOT EXAMPLES FOR NEMO-SKILLS
 # =============================================================================
@@ -982,6 +1006,15 @@ format_nano_translation_examples = [
     }
 ]
 
+format_nano1_translation_examples = [
+    {
+        "input_example": json.dumps(format_nano1_data["input"], indent=2),
+        "output_example": json.dumps(format_nano1_data["correct_output"], indent=2),
+        "source_lang": "English",
+        "target_lang": "Spanish",
+    }
+]
+
 examples_map = {
     "format0_translation_few_shot": format0_translation_examples,
     "format1_translation_few_shot": format1_translation_examples,
@@ -1000,4 +1033,5 @@ examples_map = {
     "format13_translation_few_shot": format13_translation_examples,
     "format14_translation_few_shot": format14_translation_examples,
     "format_nano_translation_few_shot": format_nano_translation_examples,
+    "format_nano1_translation_few_shot": format_nano1_translation_examples,
 }
