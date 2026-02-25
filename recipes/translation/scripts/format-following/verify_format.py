@@ -302,6 +302,10 @@ def load_format_checker(checker_name: str) -> Optional[FormatChecker]:
         if checker_name.startswith("format") and checker_name[6:].isdigit():
             module_name = checker_name
             class_name = f"Format{checker_name[6:]}Checker"
+        elif checker_name.startswith("format_"):
+            # Handle named built-in format checkers like format_nano, format_nano1
+            module_name = checker_name
+            class_name = "".join(part.capitalize() for part in checker_name.split("_")) + "Checker"
         elif "." in checker_name:
             # Handle custom format checkers (module.ClassName)
             module_name, class_name = checker_name.rsplit(".", 1)
