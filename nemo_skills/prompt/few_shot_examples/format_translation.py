@@ -848,6 +848,38 @@ format_nano1_data = {
     },
 }
 
+format_nano2_data = {
+    "input": {
+        "reasoning_content": ("We need to compute 12 * 7. Multiplying gives 84. So the final answer is 84."),
+        "metadata": {
+            "uuid": "f9baf1f7-59ba-4f4b-8ecf-4ec9fa7f7acc",
+            "domain": "math",
+            "source_file": "demo.jsonl",
+        },
+    },
+    "correct_output": {
+        "reasoning_content": (
+            "Necesitamos calcular 12 * 7. Al multiplicar obtenemos 84. Por lo tanto, la respuesta final es 84."
+        ),
+        "metadata": {
+            "uuid": "f9baf1f7-59ba-4f4b-8ecf-4ec9fa7f7acc",
+            "domain": "math",
+            "source_file": "demo.jsonl",
+        },
+    },
+    "incorrect_output": {
+        # Incorrect because metadata must remain unchanged
+        "reasoning_content": (
+            "Necesitamos calcular 12 * 7. Al multiplicar obtenemos 84. Por lo tanto, la respuesta final es 84."
+        ),
+        "metadata": {
+            "uuid": "changed-id",
+            "domain": "math",
+            "source_file": "demo.jsonl",
+        },
+    },
+}
+
 # =============================================================================
 # FEW-SHOT EXAMPLES FOR NEMO-SKILLS
 # =============================================================================
@@ -1015,6 +1047,15 @@ format_nano1_translation_examples = [
     }
 ]
 
+format_nano2_translation_examples = [
+    {
+        "input_example": json.dumps(format_nano2_data["input"], indent=2),
+        "output_example": json.dumps(format_nano2_data["correct_output"], indent=2),
+        "source_lang": "English",
+        "target_lang": "Spanish",
+    }
+]
+
 examples_map = {
     "format0_translation_few_shot": format0_translation_examples,
     "format1_translation_few_shot": format1_translation_examples,
@@ -1034,4 +1075,5 @@ examples_map = {
     "format14_translation_few_shot": format14_translation_examples,
     "format_nano_translation_few_shot": format_nano_translation_examples,
     "format_nano1_translation_few_shot": format_nano1_translation_examples,
+    "format_nano2_translation_few_shot": format_nano2_translation_examples,
 }

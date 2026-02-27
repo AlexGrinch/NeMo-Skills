@@ -1,0 +1,32 @@
+# format nano2 (simple)
+# input:
+# {
+#   "reasoning_content": "...",
+#   "metadata": ...
+# }
+#
+# formatting constraints:
+#   - translate top-level "reasoning_content"
+#   - keep top-level "metadata" unchanged
+#   - return the same top-level schema: {"reasoning_content": ..., "metadata": ...}
+
+# Few-shot examples configuration
+few_shot_examples:
+  prefix: "Here is an example to illustrate the formatting rules:\n\n"
+  template: "Input ({source_lang}):\n{input_example}\n\nOutput ({target_lang}):\n{output_example}\n\n"
+  suffix: "Now translate the following:\n\n"
+  examples_type: "format_nano2_translation_few_shot"
+
+system: You are an experienced translator that translates documents accurately into fluent text in target language, while following other formatting instructions in the prompt.
+
+user: |-
+  You need to translate some {source_lang} source text to {target_lang}.
+
+  Please follow these formatting rules:
+
+  (1) Translate the top-level "reasoning_content" field to {target_lang}.
+  (2) Keep the top-level "metadata" field unchanged.
+  (3) Return a json object with exactly two top-level fields: "reasoning_content" and "metadata".
+  (4) Do not add, remove, or rename fields.
+
+  {examples}{source_lang}: {src}
