@@ -5,7 +5,8 @@ Script to wrap JSONL data into a new format for translation tasks.
 Each line in the input JSONL file will be wrapped into a new object with:
 - source_lang: "English" (fixed)
 - target_lang: specified via command line argument
-- src: the original JSONL object serialized as a string
+- src: the original JSONL object serialized as a string (fields starting with
+  "_translation_" are excluded from src and carried over as top-level fields instead)
 """
 
 import argparse
@@ -43,21 +44,27 @@ def wrap_jsonl_data(input_file: str, output_file: str, target_lang: str) -> None
                     continue  # Skip empty lines
 
                 try:
-                    # Create the wrapped object
-                    wrapped_obj = {
-                        "source_lang": "English",
-                        "target_lang": target_lang,
-                        "src": line,  # Store the original JSON string
-                    }
-
-                    # Write the wrapped object as a new JSONL line
-                    json.dump(wrapped_obj, outfile, ensure_ascii=False)
-                    outfile.write("\n")
-                    processed_lines += 1
-
+                    record = json.loads(line)
                 except json.JSONDecodeError as e:
                     print(f"Warning: Skipping invalid JSON on line {line_num}: {e}", file=sys.stderr)
                     continue
+
+                # Fields starting with "_translation_" (e.g. _translation_src_id)
+                # are pipeline metadata: carry them through as top-level fields
+                # rather than embedding them in src so the model never sees them.
+                payload = {k: v for k, v in record.items() if not k.startswith("_translation_")}
+                metadata = {k: v for k, v in record.items() if k.startswith("_translation_")}
+
+                wrapped_obj = {
+                    "source_lang": "English",
+                    "target_lang": target_lang,
+                    "src": json.dumps(payload, ensure_ascii=False),
+                    **metadata,
+                }
+
+                json.dump(wrapped_obj, outfile, ensure_ascii=False)
+                outfile.write("\n")
+                processed_lines += 1
 
     except IOError as e:
         print(f"Error processing files: {e}", file=sys.stderr)

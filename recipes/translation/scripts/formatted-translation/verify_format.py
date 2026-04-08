@@ -35,7 +35,7 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 
 # Add the config directory to Python path to import format checkers
-config_dir = Path(__file__).parent.parent.parent / "config" / "format-following"
+config_dir = Path(__file__).parent.parent.parent / "config" / "formatted-translation"
 sys.path.insert(0, str(config_dir))
 
 try:
@@ -128,7 +128,7 @@ class FormatVerifier:
             root_logger.setLevel(logging.DEBUG)
 
             # Set up logging for all format checker modules
-            format_logger = logging.getLogger("recipes.translation.config.format-following")
+            format_logger = logging.getLogger("recipes.translation.config.formatted-translation")
             format_logger.setLevel(logging.DEBUG)
 
             # Also enable logging for any format checker modules that might be imported
