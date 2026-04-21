@@ -80,14 +80,14 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python wrap_sft_data.py input.jsonl output.jsonl --target-lang "Spanish"
-  python wrap_sft_data.py data/train.jsonl data/wrapped_train.jsonl -t "French"
+  python wrap_sft_data.py --input input.jsonl --output output.jsonl --target-lang "Spanish"
+  python wrap_sft_data.py --input data/train.jsonl --output data/wrapped_train.jsonl -t "French"
         """,
     )
 
-    parser.add_argument("input_file", help="Path to input JSONL file")
+    parser.add_argument("--input", required=True, help="Path to input JSONL file")
 
-    parser.add_argument("output_file", help="Path to output JSONL file")
+    parser.add_argument("--output", required=True, help="Path to output JSONL file")
 
     parser.add_argument(
         "-t",
@@ -98,7 +98,7 @@ Examples:
 
     args = parser.parse_args()
 
-    wrap_jsonl_data(args.input_file, args.output_file, args.target_lang)
+    wrap_jsonl_data(args.input, args.output, args.target_lang)
 
 
 if __name__ == "__main__":
