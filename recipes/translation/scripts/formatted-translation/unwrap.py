@@ -68,11 +68,8 @@ def unwrap_file(input_file: str, output_file: str, verbose: bool = False):
 
             # Carry any metadata fields (e.g. _translation_src_id) into the output.
             metadata = {k: v for k, v in row.items() if k.startswith("_translation_")}
-            if metadata:
-                output = {**json.loads(extracted), **metadata}
-                fout.write(json.dumps(output, ensure_ascii=False) + "\n")
-            else:
-                fout.write(extracted + "\n")
+            output = {**json.loads(extracted), **metadata}
+            fout.write(json.dumps(output, ensure_ascii=False) + "\n")
 
     print(f"Unwrapped {total - failed}/{total} lines. Failed: {failed}.")
 
