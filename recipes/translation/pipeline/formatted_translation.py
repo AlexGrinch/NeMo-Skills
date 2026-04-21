@@ -89,6 +89,7 @@ def make_concise(cluster, expname, run_after, stage_config, **kwargs):
         log_dir=f"{output_dir}/logs",
         expname=expname,
         run_after=run_after,
+        num_gpus=0,
         **stage_config.get("stage_kwargs", {}),
     )
 
@@ -119,6 +120,7 @@ def wrap(cluster, expname, run_after, stage_config, **kwargs):
         log_dir=f"{output_dir}/logs",
         expname=expname,
         run_after=run_after,
+        num_gpus=0,
         **stage_config.get("stage_kwargs", {}),
     )
 
@@ -168,6 +170,7 @@ def mock_generate(cluster, expname, run_after, stage_config, **kwargs):
         log_dir=f"{output_dir}/logs",
         expname=expname,
         run_after=run_after,
+        num_gpus=0,
         **stage_config.get("stage_kwargs", {}),
     )
 
@@ -193,6 +196,7 @@ def unwrap(cluster, expname, run_after, stage_config, **kwargs):
         log_dir=f"{output_dir}/logs",
         expname=expname,
         run_after=run_after,
+        num_gpus=0,
         **stage_config.get("stage_kwargs", {}),
     )
 
@@ -233,6 +237,7 @@ def filter_and_merge(cluster, expname, run_after, stage_config, **kwargs):
         log_dir=f"{output_dir}/logs",
         expname=expname,
         run_after=run_after,
+        num_gpus=0,
         **stage_config.get("stage_kwargs", {}),
     )
 
