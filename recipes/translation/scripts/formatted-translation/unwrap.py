@@ -66,10 +66,19 @@ def unwrap_file(input_file: str, output_file: str, verbose: bool = False):
                     print(f"Line {line_num}: dropped (could not extract JSON from generation)", file=sys.stderr)
                 continue
 
-            # Carry any metadata fields (e.g. _translation_src_id) into the output.
             metadata = {k: v for k, v in row.items() if k.startswith("_translation_")}
-            output = {**json.loads(extracted), **metadata}
-            fout.write(json.dumps(output, ensure_ascii=False) + "\n")
+            try:
+                parsed = json.loads(extracted)
+                if isinstance(parsed, dict):
+                    output = {**parsed, **metadata}
+                else:
+                    output = {**metadata, "data": parsed} if metadata else parsed
+                fout.write(json.dumps(output, ensure_ascii=False) + "\n")
+            except Exception as e:
+                failed += 1
+                print(f"Line {line_num}: {type(e).__name__}: {e}", file=sys.stderr)
+                print(f"  generation field: {generation[:500]}", file=sys.stderr)
+                continue
 
     print(f"Unwrapped {total - failed}/{total} lines. Failed: {failed}.")
 
