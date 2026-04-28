@@ -219,6 +219,11 @@ def generate(cluster, expname, run_after, stage_config, **kwargs):
     output_dir = _stage_dir(base_output_dir, "generate", stage_config)
     format_config = stage_config["format_config"]
 
+    stage_kwargs = stage_config.get("stage_kwargs", {})
+    stage_kwargs.setdefault("sbatch_kwargs", {})
+    if isinstance(stage_kwargs["sbatch_kwargs"], dict):
+        stage_kwargs["sbatch_kwargs"].setdefault("poll_estimated_start_time", False)
+
     generate_fn(
         ctx=wrap_arguments(f"++prompt_config={format_config} {stage_config.get('inline_args', '')} "),
         cluster=cluster,
@@ -226,7 +231,7 @@ def generate(cluster, expname, run_after, stage_config, **kwargs):
         output_dir=output_dir,
         expname=expname,
         run_after=run_after,
-        **stage_config.get("stage_kwargs", {}),
+        **stage_kwargs,
     )
 
 
