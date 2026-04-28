@@ -424,6 +424,7 @@ if __name__ == "__main__":
     input_file = config.get("input_file")
     target_lang = config.get("target_lang")
 
+    prev_expname = None
     for stage in stages_to_run:
         print(f"\n--- Running stage: {stage} ---")
         stage_config = config.get("stages", {}).get(stage, {})
@@ -432,6 +433,8 @@ if __name__ == "__main__":
         dep_stages = stage_config.get("dependencies")
         if dep_stages is not None:
             dependencies = [_stage_expname(expname_base, d, suffix) for d in dep_stages]
+        elif prev_expname is not None:
+            dependencies = [prev_expname]
         else:
             dependencies = config.get("initial_dependency", None)
 
@@ -447,5 +450,6 @@ if __name__ == "__main__":
             target_lang=target_lang,
             pipeline_stages=full_stage_sequence,
         )
+        prev_expname = current_expname
 
     print("\n--- Pipeline finished. ---")
