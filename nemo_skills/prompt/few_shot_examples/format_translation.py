@@ -848,6 +848,29 @@ format_nano1_data = {
     },
 }
 
+format_nano1_escaped_data = {
+    "input": {
+        "problem": "**Question:** Part of plant used for culturing is called\n\nA. Scion\nB. Explant\nC. Stock\nD. Callus",
+        "generation": '<<ESC:think>>\nWe need to identify the plant tissue culture term. The piece of plant tissue placed in culture medium is called an "explant".\n<<ESC:/think>>\nAnswer: B',
+    },
+    "correct_output": {
+        "problem": "**Question:** Part of plant used for culturing is called\n\nA. Scion\nB. Explant\nC. Stock\nD. Callus",
+        "generation": '<<ESC:think>>\nWe need to identify the plant tissue culture term. The piece of plant tissue placed in culture medium is called an "explant".\n<<ESC:/think>>\nAnswer: B',
+        "translation": {
+            "problem": "**Pregunta:** La parte de la planta utilizada para el cultivo se llama\n\nA. Injerto\nB. Explante\nC. Portainjerto\nD. Callo",
+            "generation": '<<ESC:think>>\nNecesitamos identificar el término de cultivo de tejidos vegetales. El trozo de tejido vegetal colocado en medio de cultivo se llama "explante".\n<<ESC:/think>>\nRespuesta: B',
+        },
+    },
+    "incorrect_output": {
+        "problem": "**Pregunta:** La parte de la planta utilizada para el cultivo se llama\n\nA. Injerto\nB. Explante\nC. Portainjerto\nD. Callo",
+        "generation": "<think>\nNecesitamos identificar el término de cultivo de tejidos vegetales.\n</think>\nRespuesta: B",
+        "translation": {
+            "problem": "**Pregunta:** La parte de la planta utilizada para el cultivo se llama\n\nA. Injerto\nB. Explante\nC. Portainjerto\nD. Callo",
+            "generation": "<think>\nNecesitamos identificar el término de cultivo de tejidos vegetales.\n</think>\nRespuesta: B",
+        },
+    },
+}
+
 format_nano2_data = {
     "input": {
         "reasoning_content": ("We need to compute 12 * 7. Multiplying gives 84. So the final answer is 84."),
@@ -1047,6 +1070,15 @@ format_nano1_translation_examples = [
     }
 ]
 
+format_nano1_escaped_translation_examples = [
+    {
+        "input_example": json.dumps(format_nano1_escaped_data["input"], indent=2),
+        "output_example": json.dumps(format_nano1_escaped_data["correct_output"], indent=2),
+        "source_lang": "English",
+        "target_lang": "Spanish",
+    }
+]
+
 format_nano2_translation_examples = [
     {
         "input_example": json.dumps(format_nano2_data["input"], indent=2),
@@ -1075,5 +1107,6 @@ examples_map = {
     "format14_translation_few_shot": format14_translation_examples,
     "format_nano_translation_few_shot": format_nano_translation_examples,
     "format_nano1_translation_few_shot": format_nano1_translation_examples,
+    "format_nano1_escaped_translation_few_shot": format_nano1_escaped_translation_examples,
     "format_nano2_translation_few_shot": format_nano2_translation_examples,
 }

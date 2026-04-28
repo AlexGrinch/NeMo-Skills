@@ -161,7 +161,13 @@ def filter_and_merge(
                 continue
 
             translated = json.loads(extracted)
-            output_record = {**orig_record, **{k: translated[k] for k in fields_to_translate if k in translated}}
+            translation_source = translated
+            if isinstance(translated.get("translation"), dict):
+                translation_source = translated["translation"]
+            output_record = {
+                **orig_record,
+                **{k: translation_source[k] for k in fields_to_translate if k in translation_source},
+            }
             fout.write(json.dumps(output_record, ensure_ascii=False) + "\n")
             merged += 1
             orig_item = next(orig_iter, None)

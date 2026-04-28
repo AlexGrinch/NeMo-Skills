@@ -16,13 +16,15 @@
 Formatted translation pipeline.
 
 Stages:
-  1. make_concise      – keep only fields_to_consider from each JSON object
-  2. wrap              – add source_lang / target_lang, serialize concise JSON as `src`
-  3. generate          – run LLM to produce a formatted translation
-  4. unwrap            – extract the translated JSON from the model's generation field
-  5. filter_and_merge  – validate with format checker; on pass, replace fields_to_translate
-                         in the original object with translated values
-  6. curate            – placeholder for downstream data curation steps
+  1. make_concise              – keep only fields_to_consider from each JSON object
+  2. wrap                      – add source_lang / target_lang, serialize concise JSON as `src`
+  3. escape_special_tokens     – (optional) escape model special tokens to <<ESC:...>> placeholders
+  4. generate                  – run LLM to produce a formatted translation
+  5. unescape_special_tokens   – (optional) restore <<ESC:...>> placeholders to original tokens
+  6. unwrap                    – extract the translated JSON from the model's generation field
+  7. filter_and_merge          – validate with format checker; on pass, replace fields_to_translate
+                                 in the original object with translated values
+  8. curate                    – placeholder for downstream data curation steps
 
 Standalone scripts for each stage (except generate) live under:
   recipes/translation/scripts/formatted-translation/
@@ -52,6 +54,15 @@ _SCRIPTS_DIR = "/nemo_run/code/recipes/translation/scripts/formatted-translation
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+
+def _done_check(file_path: str) -> str:
+    """Shell command that fails with a clear message if {file_path}.done is missing."""
+    return (
+        f'test -f "{file_path}.done" '
+        f'|| {{ echo "ERROR: {file_path}.done not found — generate stage incomplete. '
+        f'Re-run the pipeline to resume." >&2; exit 1; }}'
+    )
 
 
 def _stage_expname(base_expname: str, stage_name: str, suffix: str) -> str:
@@ -126,6 +137,71 @@ def wrap(cluster, expname, run_after, stage_config, **kwargs):
 
 
 # ---------------------------------------------------------------------------
+# Stage: escape_special_tokens
+# ---------------------------------------------------------------------------
+
+
+def escape_special_tokens(cluster, expname, run_after, stage_config, **kwargs):
+    """Escape model special tokens so they don't interfere with generation."""
+    base_output_dir = kwargs["base_output_dir"]
+
+    input_file = stage_config.get("input_file", f"{base_output_dir}/wrap/wrapped.jsonl")
+    output_dir = _stage_dir(base_output_dir, "escape_special_tokens", stage_config)
+    output_file = stage_config.get("output_file", f"{output_dir}/escaped.jsonl")
+    model = stage_config["model"]
+
+    cmd = (
+        f"python {_SCRIPTS_DIR}/escape_special_tokens.py "
+        f"    --input {input_file} "
+        f"    --output {output_file} "
+        f"    --model {model} "
+        f"    --mode escape "
+    )
+    run_cmd(
+        ctx=wrap_arguments(cmd),
+        cluster=cluster,
+        log_dir=f"{output_dir}/logs",
+        expname=expname,
+        run_after=run_after,
+        num_gpus=0,
+        **stage_config.get("stage_kwargs", {}),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Stage: unescape_special_tokens
+# ---------------------------------------------------------------------------
+
+
+def unescape_special_tokens(cluster, expname, run_after, stage_config, **kwargs):
+    """Restore escaped special tokens in generation output."""
+    base_output_dir = kwargs["base_output_dir"]
+
+    input_file = stage_config.get("input_file", f"{base_output_dir}/generate/output.jsonl")
+    output_dir = _stage_dir(base_output_dir, "unescape_special_tokens", stage_config)
+    output_file = stage_config.get("output_file", f"{output_dir}/unescaped.jsonl")
+    model = stage_config["model"]
+
+    cmd = (
+        f"{_done_check(input_file)} && "
+        f"python {_SCRIPTS_DIR}/escape_special_tokens.py "
+        f"    --input {input_file} "
+        f"    --output {output_file} "
+        f"    --model {model} "
+        f"    --mode unescape "
+    )
+    run_cmd(
+        ctx=wrap_arguments(cmd),
+        cluster=cluster,
+        log_dir=f"{output_dir}/logs",
+        expname=expname,
+        run_after=run_after,
+        num_gpus=0,
+        **stage_config.get("stage_kwargs", {}),
+    )
+
+
+# ---------------------------------------------------------------------------
 # Stage: generate
 # ---------------------------------------------------------------------------
 
@@ -133,8 +209,13 @@ def wrap(cluster, expname, run_after, stage_config, **kwargs):
 def generate(cluster, expname, run_after, stage_config, **kwargs):
     """Run LLM translation with a format-specific prompt config."""
     base_output_dir = kwargs["base_output_dir"]
+    pipeline_stages = kwargs.get("pipeline_stages", [])
 
-    input_file = stage_config.get("input_file", f"{base_output_dir}/wrap/wrapped.jsonl")
+    if "escape_special_tokens" in pipeline_stages:
+        default_input = f"{base_output_dir}/escape_special_tokens/escaped.jsonl"
+    else:
+        default_input = f"{base_output_dir}/wrap/wrapped.jsonl"
+    input_file = stage_config.get("input_file", default_input)
     output_dir = _stage_dir(base_output_dir, "generate", stage_config)
     format_config = stage_config["format_config"]
 
@@ -210,9 +291,14 @@ def filter_and_merge(cluster, expname, run_after, stage_config, **kwargs):
     """Validate each translated output; on pass, merge translated fields into the original."""
     base_output_dir = kwargs["base_output_dir"]
     fields_to_translate = kwargs["fields_to_translate"]
+    pipeline_stages = kwargs.get("pipeline_stages", [])
 
     original_file = stage_config.get("original_file", kwargs.get("input_file"))
-    generation_file = stage_config.get("generation_file", f"{base_output_dir}/generate/output.jsonl")
+    if "unescape_special_tokens" in pipeline_stages:
+        default_gen = f"{base_output_dir}/unescape_special_tokens/unescaped.jsonl"
+    else:
+        default_gen = f"{base_output_dir}/generate/output.jsonl"
+    generation_file = stage_config.get("generation_file", default_gen)
     checker_name = stage_config["checker"]
     output_dir = _stage_dir(base_output_dir, "filter_and_merge", stage_config)
     output_file = stage_config.get("output_file", f"{output_dir}/translated.jsonl")
@@ -262,8 +348,10 @@ def curate(cluster, expname, run_after, stage_config, **kwargs):
 stages_map = {
     "make_concise": make_concise,
     "wrap": wrap,
+    "escape_special_tokens": escape_special_tokens,
     "generate": generate,
     "mock_generate": mock_generate,
+    "unescape_special_tokens": unescape_special_tokens,
     "unwrap": unwrap,
     "filter_and_merge": filter_and_merge,
     "curate": curate,
@@ -357,6 +445,7 @@ if __name__ == "__main__":
             fields_to_consider=fields_to_consider,
             input_file=input_file,
             target_lang=target_lang,
+            pipeline_stages=full_stage_sequence,
         )
 
     print("\n--- Pipeline finished. ---")

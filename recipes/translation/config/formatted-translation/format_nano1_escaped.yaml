@@ -1,0 +1,40 @@
+# format nano1_escaped (format_nano1 + special-token escape placeholders)
+# input:
+# {
+#   "problem": "...",
+#   "generation": "<<ESC:think>>\n...\n<<ESC:/think>>\n..."
+# }
+#
+# formatting constraints:
+#   - translate problem
+#   - translate generation
+#   - keep original problem and generation unchanged
+#   - add a top-level "translation" object with:
+#       - "problem": translated problem
+#       - "generation": translated generation
+#   - preserve all <<ESC:...>> placeholders exactly as-is
+
+# Few-shot examples configuration
+few_shot_examples:
+  prefix: "Here is an example to illustrate the formatting rules:\n\n"
+  template: "Input ({source_lang}):\n{input_example}\n\nOutput ({target_lang}):\n{output_example}\n\n"
+  suffix: "Now translate the following:\n\n"
+  examples_type: "format_nano1_escaped_translation_few_shot"
+
+system: You are an experienced translator that translates documents accurately into fluent text in target language, while following other formatting instructions in the prompt.
+
+user: |-
+  You need to translate some {source_lang} source text to {target_lang}.
+
+  Please follow these formatting rules:
+
+  (1) Translate the top-level "problem" field to {target_lang}.
+  (2) Translate the top-level "generation" field to {target_lang}.
+  (3) Keep the original "problem" and "generation" fields unchanged.
+  (4) Return a json object with an extra top-level field "translation".
+  (5) "translation" must be an object with exactly two fields:
+      - "problem": translated problem
+      - "generation": translated generation
+  (6) The text may contain <<ESC:...>> placeholders (e.g. <<ESC:think>>, <<ESC:/think>>, <<ESC:|im_start|>>). These are escape markers for special tokens. Copy them exactly as-is into the translation — do not translate, remove, or alter them in any way.
+
+  {examples}{source_lang}: {src}
