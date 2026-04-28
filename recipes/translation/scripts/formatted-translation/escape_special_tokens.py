@@ -44,8 +44,15 @@ from pathlib import Path
 def get_special_tokens(model: str) -> list[str]:
     from transformers import AutoTokenizer
 
-    tokenizer = AutoTokenizer.from_pretrained(model, trust_remote_code=True)
-    return tokenizer.all_special_tokens
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(model, trust_remote_code=True)
+    except (ValueError, AttributeError, KeyError):
+        from transformers import PreTrainedTokenizerFast
+
+        tokenizer = PreTrainedTokenizerFast.from_pretrained(model)
+    tokens = set(tokenizer.all_special_tokens)
+    tokens.update(tokenizer.added_tokens_encoder.keys())
+    return list(tokens)
 
 
 def _escape_token(token: str) -> str:
