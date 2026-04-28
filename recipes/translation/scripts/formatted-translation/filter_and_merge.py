@@ -41,6 +41,7 @@ Usage:
 
 import argparse
 import hashlib
+import itertools
 import json
 import sys
 from pathlib import Path
@@ -93,41 +94,52 @@ def filter_and_merge(
         orig_iter = iter_nonempty(forig)
         gen_iter = iter_nonempty(fgen)
 
+        # Peek at first generation record to decide pairing strategy.
+        first_gen = next(gen_iter, None)
+        if first_gen is not None:
+            gen_iter = itertools.chain([first_gen], gen_iter)
+            _, _, first_record = first_gen
+            use_src_id = "_translation_src_id" in first_record
+            if not use_src_id:
+                print("Note: no '_translation_src_id' in generation; using positional matching.", file=sys.stderr)
+
         orig_item = next(orig_iter, None)
 
         for gen_line_num, gen_raw, gen_record in gen_iter:
-            gen_src_id = gen_record.get("_translation_src_id")
-            if gen_src_id is None:
-                raise ValueError(
-                    f"Generation line {gen_line_num} has no '_translation_src_id'. "
-                    "Re-run make_concise without --no-src-id."
-                )
-
-            # Advance original until IDs match, writing skipped records per --on-fail.
-            while orig_item is not None:
-                orig_line_num, orig_raw, orig_record = orig_item
-                total += 1
-                if compute_src_id(orig_record) == gen_src_id:
-                    break
-                # This original record was skipped in generation.
-                skipped_orig += 1
-                if verbose:
+            if use_src_id:
+                # Advance original until IDs match, writing skipped records per --on-fail.
+                gen_src_id = gen_record["_translation_src_id"]
+                while orig_item is not None:
+                    orig_line_num, orig_raw, orig_record = orig_item
+                    total += 1
+                    if compute_src_id(orig_record) == gen_src_id:
+                        break
+                    skipped_orig += 1
+                    if verbose:
+                        print(
+                            f"Original line {orig_line_num}: no matching generation, applying --on-fail={on_fail}",
+                            file=sys.stderr,
+                        )
+                    write_original(fout, orig_raw, on_fail)
+                    orig_item = next(orig_iter, None)
+                else:
                     print(
-                        f"Original line {orig_line_num}: no matching generation, applying --on-fail={on_fail}",
+                        f"Warning: generation line {gen_line_num} (src_id={gen_src_id}) has no matching original record.",
                         file=sys.stderr,
                     )
-                write_original(fout, orig_raw, on_fail)
-                orig_item = next(orig_iter, None)
+                    continue
             else:
-                # Generation has a record with no matching original — shouldn't
-                # happen if the pipeline ran correctly; warn and skip.
-                print(
-                    f"Warning: generation line {gen_line_num} (src_id={gen_src_id}) has no matching original record.",
-                    file=sys.stderr,
-                )
-                continue
+                # Positional: just take the next original line.
+                if orig_item is None:
+                    print(
+                        f"Warning: generation line {gen_line_num} has no matching original (original exhausted).",
+                        file=sys.stderr,
+                    )
+                    continue
+                orig_line_num, orig_raw, orig_record = orig_item
+                total += 1
 
-            # IDs match — run format check and merge.
+            # Validate and merge.
             src = gen_record.get("src", "")
             generation = gen_record.get("generation", "")
 
@@ -154,7 +166,7 @@ def filter_and_merge(
             merged += 1
             orig_item = next(orig_iter, None)
 
-        # Drain any remaining original records (generation was a partial run).
+        # Drain any remaining original records.
         while orig_item is not None:
             orig_line_num, orig_raw, orig_record = orig_item
             total += 1
