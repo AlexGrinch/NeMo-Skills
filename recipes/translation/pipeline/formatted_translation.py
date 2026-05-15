@@ -74,6 +74,31 @@ def _stage_dir(base_output_dir: str, stage_name: str, stage_config: dict) -> str
 
 
 # ---------------------------------------------------------------------------
+# Stage: sft_to_flat
+# ---------------------------------------------------------------------------
+
+
+def sft_to_flat(cluster, expname, run_after, stage_config, **kwargs):
+    """Extract assistant content from SFT messages into a top-level generation field."""
+    base_output_dir = kwargs["base_output_dir"]
+
+    input_file = stage_config.get("input_file", kwargs.get("input_file"))
+    output_dir = _stage_dir(base_output_dir, "sft_to_flat", stage_config)
+    output_file = stage_config.get("output_file", f"{output_dir}/flat.jsonl")
+
+    cmd = f"python {_SCRIPTS_DIR}/sft_to_flat.py     --input {input_file}     --output {output_file} "
+    run_cmd(
+        ctx=wrap_arguments(cmd),
+        cluster=cluster,
+        log_dir=f"{output_dir}/logs",
+        expname=expname,
+        run_after=run_after,
+        num_gpus=0,
+        **stage_config.get("stage_kwargs", {}),
+    )
+
+
+# ---------------------------------------------------------------------------
 # Stage: make_concise
 # ---------------------------------------------------------------------------
 
@@ -82,8 +107,13 @@ def make_concise(cluster, expname, run_after, stage_config, **kwargs):
     """Keep only fields_to_consider from each JSON object."""
     base_output_dir = kwargs["base_output_dir"]
     fields_to_consider = kwargs["fields_to_consider"]
+    pipeline_stages = kwargs.get("pipeline_stages", [])
 
-    input_file = stage_config.get("input_file", kwargs.get("input_file"))
+    if "sft_to_flat" in pipeline_stages:
+        default_input = f"{base_output_dir}/sft_to_flat/flat.jsonl"
+    else:
+        default_input = kwargs.get("input_file")
+    input_file = stage_config.get("input_file", default_input)
     output_dir = _stage_dir(base_output_dir, "make_concise", stage_config)
     output_file = stage_config.get("output_file", f"{output_dir}/concise.jsonl")
 
@@ -298,7 +328,11 @@ def filter_and_merge(cluster, expname, run_after, stage_config, **kwargs):
     fields_to_translate = kwargs["fields_to_translate"]
     pipeline_stages = kwargs.get("pipeline_stages", [])
 
-    original_file = stage_config.get("original_file", kwargs.get("input_file"))
+    if "sft_to_flat" in pipeline_stages:
+        default_original = f"{base_output_dir}/sft_to_flat/flat.jsonl"
+    else:
+        default_original = kwargs.get("input_file")
+    original_file = stage_config.get("original_file", default_original)
     if "unescape_special_tokens" in pipeline_stages:
         default_gen = f"{base_output_dir}/unescape_special_tokens/unescaped.jsonl"
     else:
@@ -351,6 +385,7 @@ def curate(cluster, expname, run_after, stage_config, **kwargs):
 # ---------------------------------------------------------------------------
 
 stages_map = {
+    "sft_to_flat": sft_to_flat,
     "make_concise": make_concise,
     "wrap": wrap,
     "escape_special_tokens": escape_special_tokens,

@@ -60,6 +60,9 @@ def make_concise_file(
                     print(f"Line {line_num}: skipped (invalid JSON)", file=sys.stderr)
                 continue
 
+            missing = [k for k in fields if k not in record]
+            if missing and verbose:
+                print(f"Line {line_num}: missing fields {missing}", file=sys.stderr)
             concise = {k: record[k] for k in fields if k in record}
             if add_src_id:
                 concise["_translation_src_id"] = compute_src_id(record)
