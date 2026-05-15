@@ -14,7 +14,8 @@
 # limitations under the License.
 
 """
-Filter JSONL by a format checker and keep only cleaned translated outputs.
+Filter JSONL by a format checker and keep only cleaned translated outputs,
+or run checker-only stats with --stats-only.
 
 Input JSONL is expected to contain:
   {"src": "...", "generation": "...", ...}
@@ -223,13 +224,72 @@ def filter_file(
     return total, kept, dropped, placeholders
 
 
+def _format_lines(lines: list[int], limit: int) -> str:
+    shown = lines[:limit]
+    suffix = f", ... and {len(lines) - limit} more" if len(lines) > limit else ""
+    return ", ".join(str(x) for x in shown) + suffix
+
+
+def check_file(
+    input_file: str,
+    checker: FormatChecker,
+    verbose: bool = False,
+    max_failures: int = 10,
+) -> Tuple[int, int, int, int, int, int, List[int]]:
+    """Run only the format checker and return pass/no-pass stats."""
+    total = passed = nopass = 0
+    invalid_json = missing_fields = checker_failed = 0
+    failed_lines: List[int] = []
+
+    with open(input_file, "r", encoding="utf-8") as infile:
+        for line_num, raw_line in enumerate(infile, 1):
+            line = raw_line.strip()
+            if not line:
+                continue
+
+            total += 1
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError as e:
+                nopass += 1
+                invalid_json += 1
+                failed_lines.append(line_num)
+                if verbose:
+                    print(f"Line {line_num}: no-pass (invalid JSONL line: {e})")
+                continue
+
+            src = row.get("src")
+            generation = row.get("generation")
+            if not isinstance(src, str) or not isinstance(generation, str):
+                nopass += 1
+                missing_fields += 1
+                failed_lines.append(line_num)
+                if verbose:
+                    print(f"Line {line_num}: no-pass (missing string 'src'/'generation')")
+                continue
+
+            if checker.check(src, generation):
+                passed += 1
+            else:
+                nopass += 1
+                checker_failed += 1
+                failed_lines.append(line_num)
+                if verbose:
+                    print(f"Line {line_num}: no-pass (format checker failed)")
+
+    if max_failures == 0:
+        failed_lines = []
+    return total, passed, nopass, invalid_json, missing_fields, checker_failed, failed_lines
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Filter JSONL by checker and keep only translated output JSON",
+        description="Filter JSONL by checker, or run checker-only stats with --stats-only",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   %(prog)s --checker format_nano1 --input data.jsonl --output filtered.jsonl
+  %(prog)s --checker format_nano1 --input data.jsonl --stats-only
   %(prog)s --checker format1 --input data.jsonl --output filtered.jsonl --verbose
   %(prog)s --list-checkers
         """,
@@ -238,6 +298,20 @@ Examples:
     parser.add_argument("--input", type=str, help="Input JSONL with 'src' and 'generation'")
     parser.add_argument("--output", type=str, help="Output JSONL for cleaned translated outputs")
     parser.add_argument("--verbose", action="store_true", help="Print per-line drop reasons")
+    parser.add_argument("--stats-only", action="store_true", help="Only run the checker and print pass/no-pass stats")
+    parser.add_argument(
+        "--fail-on-nopass",
+        "--fail-on-drop",
+        dest="fail_on_nopass",
+        action="store_true",
+        help="Exit non-zero if any input line does not pass validation",
+    )
+    parser.add_argument(
+        "--max-failures",
+        type=int,
+        default=10,
+        help="Maximum number of no-pass line numbers to print with --stats-only (default: 10)",
+    )
     parser.add_argument(
         "--preserve-lines",
         action="store_true",
@@ -257,8 +331,8 @@ Examples:
             print("No format checkers found.")
         return 0
 
-    if not all([args.checker, args.input, args.output]):
-        parser.error("--checker, --input and --output are required (unless using --list-checkers)")
+    if not all([args.checker, args.input]) or (not args.stats_only and not args.output):
+        parser.error("--checker and --input are required; --output is required unless using --stats-only")
 
     if not os.path.exists(args.input):
         print(f"Error: Input file '{args.input}' not found")
@@ -267,6 +341,25 @@ Examples:
     checker = load_format_checker(args.checker)
     if not checker:
         return 1
+
+    if args.stats_only:
+        total, passed, nopass, invalid_json, missing_fields, checker_failed, failed_lines = check_file(
+            args.input, checker, verbose=args.verbose, max_failures=args.max_failures
+        )
+        pass_rate = passed / total * 100 if total else 0.0
+        nopass_rate = nopass / total * 100 if total else 0.0
+        print("Format Check Summary:")
+        print(f"  Input file: {args.input}")
+        print(f"  Total non-empty lines: {total}")
+        print(f"  Pass: {passed} ({pass_rate:.1f}%)")
+        print(f"  No-pass: {nopass} ({nopass_rate:.1f}%)")
+        if nopass:
+            print(f"  Invalid JSON: {invalid_json}")
+            print(f"  Missing src/generation: {missing_fields}")
+            print(f"  Checker failed: {checker_failed}")
+            if failed_lines:
+                print(f"  No-pass lines: {_format_lines(failed_lines, args.max_failures)}")
+        return 1 if args.fail_on_nopass and nopass else 0
 
     total, kept, dropped, placeholders = filter_file(
         args.input, args.output, checker, verbose=args.verbose, preserve_lines=args.preserve_lines
@@ -280,7 +373,7 @@ Examples:
         print(f"  Placeholder {{}} lines written: {placeholders}")
     print(f"  Output file: {args.output}")
 
-    return 0
+    return 1 if args.fail_on_nopass and dropped else 0
 
 
 if __name__ == "__main__":
