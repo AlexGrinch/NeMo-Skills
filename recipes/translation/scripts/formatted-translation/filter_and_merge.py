@@ -80,6 +80,7 @@ def filter_and_merge(
     fields_to_translate: list[str],
     output_file: str,
     on_fail: str,
+    to_messages: bool = False,
     verbose: bool = False,
 ):
     Path(output_file).parent.mkdir(parents=True, exist_ok=True)
@@ -164,10 +165,17 @@ def filter_and_merge(
             translation_source = translated
             if isinstance(translated.get("translation"), dict):
                 translation_source = translated["translation"]
-            output_record = {
-                **orig_record,
-                **{k: translation_source[k] for k in fields_to_translate if k in translation_source},
-            }
+            output_record = dict(orig_record)
+            if to_messages and "messages" in output_record:
+                messages = [dict(m) for m in output_record["messages"]]
+                for i, field in enumerate(fields_to_translate):
+                    if field in translation_source and i < len(messages):
+                        messages[i]["content"] = translation_source[field]
+                output_record["messages"] = messages
+            else:
+                output_record.update(
+                    {k: translation_source[k] for k in fields_to_translate if k in translation_source}
+                )
             fout.write(json.dumps(output_record, ensure_ascii=False) + "\n")
             merged += 1
             orig_item = next(orig_iter, None)
@@ -214,6 +222,11 @@ def main():
         default="keep",
         help="What to do when format check fails or record is missing from generation (default: keep)",
     )
+    parser.add_argument(
+        "--to-messages",
+        action="store_true",
+        help="Write translated fields back into the messages array by position instead of top-level keys",
+    )
     parser.add_argument("--verbose", action="store_true", help="Print per-line details to stderr")
     args = parser.parse_args()
 
@@ -228,6 +241,7 @@ def main():
         fields_to_translate=args.fields_to_translate,
         output_file=args.output,
         on_fail=args.on_fail,
+        to_messages=args.to_messages,
         verbose=args.verbose,
     )
 

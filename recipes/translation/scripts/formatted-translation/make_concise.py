@@ -25,6 +25,7 @@ translations back to original records without relying on line alignment.
 
 Usage:
     python make_concise.py --input data.jsonl --output concise.jsonl --fields problem generation
+    python make_concise.py --input data.jsonl --output concise.jsonl --fields problem generation --from-messages
 """
 
 import argparse
@@ -39,8 +40,28 @@ def compute_src_id(record: dict) -> str:
     return hashlib.sha256(canonical.encode()).hexdigest()[:16]
 
 
+def extract_from_messages(record: dict, fields: list[str]) -> dict:
+    """Extract fields by position from the messages array.
+
+    fields[0] <- messages[0]["content"], fields[1] <- messages[1]["content"], etc.
+    """
+    messages = record.get("messages", [])
+    concise = {}
+    for i, field in enumerate(fields):
+        if i < len(messages):
+            concise[field] = messages[i].get("content", "")
+        else:
+            concise[field] = ""
+    return concise
+
+
 def make_concise_file(
-    input_file: str, output_file: str, fields: list[str], add_src_id: bool = True, verbose: bool = False
+    input_file: str,
+    output_file: str,
+    fields: list[str],
+    from_messages: bool = False,
+    add_src_id: bool = True,
+    verbose: bool = False,
 ):
     Path(output_file).parent.mkdir(parents=True, exist_ok=True)
 
@@ -60,10 +81,14 @@ def make_concise_file(
                     print(f"Line {line_num}: skipped (invalid JSON)", file=sys.stderr)
                 continue
 
-            missing = [k for k in fields if k not in record]
-            if missing and verbose:
-                print(f"Line {line_num}: missing fields {missing}", file=sys.stderr)
-            concise = {k: record[k] for k in fields if k in record}
+            if from_messages:
+                concise = extract_from_messages(record, fields)
+            else:
+                missing = [k for k in fields if k not in record]
+                if missing and verbose:
+                    print(f"Line {line_num}: missing fields {missing}", file=sys.stderr)
+                concise = {k: record[k] for k in fields if k in record}
+
             if add_src_id:
                 concise["_translation_src_id"] = compute_src_id(record)
             fout.write(json.dumps(concise, ensure_ascii=False) + "\n")
@@ -88,6 +113,11 @@ def main():
         help="Top-level fields to keep (e.g. --fields problem generation)",
     )
     parser.add_argument(
+        "--from-messages",
+        action="store_true",
+        help="Extract fields by position from the messages array instead of top-level keys",
+    )
+    parser.add_argument(
         "--no-src-id",
         action="store_true",
         help="Do not add _translation_src_id to output records",
@@ -95,7 +125,14 @@ def main():
     parser.add_argument("--verbose", action="store_true", help="Print per-line warnings to stderr")
     args = parser.parse_args()
 
-    make_concise_file(args.input, args.output, args.fields, add_src_id=not args.no_src_id, verbose=args.verbose)
+    make_concise_file(
+        args.input,
+        args.output,
+        args.fields,
+        from_messages=args.from_messages,
+        add_src_id=not args.no_src_id,
+        verbose=args.verbose,
+    )
 
 
 if __name__ == "__main__":
