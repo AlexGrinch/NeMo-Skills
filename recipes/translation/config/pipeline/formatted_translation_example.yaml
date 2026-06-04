@@ -1,0 +1,98 @@
+# Example config for recipes/translation/pipeline/formatted_translation.py
+
+base_output_dir: /path/to/pipeline-output
+expname: formatted-translation
+cluster: cw-dfw-cpu
+
+# Top-level fields that should be replaced by translated values after validation.
+fields_to_translate:
+  - problem
+  - generation
+
+# Fields shown to the model. Defaults to fields_to_translate if omitted.
+fields_to_consider:
+  - problem
+  - generation
+
+input_file: /path/to/input.jsonl
+target_lang: German
+
+# Set this when translating message-style data and mapping fields by message position.
+# from_messages: true
+
+pipeline_stages:
+  - make_concise
+  - wrap
+  # - escape_special_tokens      # optional: escape model special tokens before generation
+  - generate
+  # - unescape_special_tokens    # optional: restore escaped special tokens after generation
+  # - format_check               # optional: quick pass/no-pass stats without merging
+  # - unwrap                     # optional: standalone inspection of extracted translations
+  - filter_and_merge
+  # - curate                     # not yet implemented
+  # - convert_to_sft             # optional: materialize curated/filter_and_merge output for SFT
+
+stages:
+  make_concise:
+    # input_file: ...   # defaults to top-level input_file
+    # output_file: ...  # defaults to {base_output_dir}/make_concise/concise.jsonl
+
+  wrap:
+    # target_lang: German  # uncomment to override top-level target_lang
+    # output_file: ...     # defaults to {base_output_dir}/wrap/wrapped.jsonl
+
+  escape_special_tokens:
+    model: /path/to/tokenizer-or-model
+    # input_file: ...   # defaults to {base_output_dir}/wrap/wrapped.jsonl
+    # output_file: ...  # defaults to {base_output_dir}/escape_special_tokens/escaped.jsonl
+
+  generate:
+    format_config: recipes/translation/config/formatted-translation/format_nano2.yaml
+    inline_args: >-
+      ++inference.endpoint_type=chat
+      ++inference.temperature=0.6
+      ++inference.tokens_to_generate=40000
+    stage_kwargs:
+      server_type: vllm
+      model: /path/to/model
+      server_gpus: 1
+      num_chunks: 1
+
+  unescape_special_tokens:
+    model: /path/to/tokenizer-or-model
+    # input_file: ...   # defaults to {base_output_dir}/generate/output.jsonl
+    # output_file: ...  # defaults to {base_output_dir}/unescape_special_tokens/unescaped.jsonl
+
+  format_check:
+    # checker can be omitted here if stages.filter_and_merge.checker is set.
+    checker: format_nano2
+    # input_file: ...       # defaults to unescape_special_tokens/unescaped.jsonl if that stage is present,
+    #                       # otherwise generate/output.jsonl
+    # max_failures: 10
+    # fail_on_nopass: false # keep stats-only runs successful even when some rows do not pass
+    # verbose: false
+
+  unwrap:
+    # input_file: ...   # defaults to {base_output_dir}/generate/output.jsonl
+    # output_file: ...  # defaults to {base_output_dir}/unwrap/unwrapped.jsonl
+    # verbose: false
+
+  filter_and_merge:
+    checker: format_nano2
+    # original_file: ...    # defaults to top-level input_file
+    # generation_file: ...  # defaults to unescape_special_tokens/unescaped.jsonl if that stage is present,
+    #                       # otherwise generate/output.jsonl
+    # output_file: ...      # defaults to {base_output_dir}/filter_and_merge/translated.jsonl
+    # on_fail: keep         # keep original unchanged on failure; alternative: drop
+    # verbose: false
+
+  convert_to_sft:
+    model: nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16
+    # input_file: ...       # defaults to curate/curated.jsonl if curate is before this stage,
+    #                       # otherwise filter_and_merge/translated.jsonl
+    # output_file: ...      # defaults to {base_output_dir}/convert_to_sft/translated_sft.jsonl
+    # jobs: 16
+    # batch: 100
+    # num_shards: 10
+    # dependent_jobs: 3
+    # inline_args: --extra_info
