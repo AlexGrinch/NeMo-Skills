@@ -477,8 +477,3 @@ To add a new format:
 - Avoid using `NEMO_SKILLS_DISABLE_UNCOMMITTED_CHANGES_CHECK` for normal runs, because uncommitted files may not be included in the packaged code.
 - If a remote data path is not already mounted by the selected cluster config, pass `mount_paths` through `stage_kwargs`.
 - Large generation outputs may be chunked. Ensure generation has completed and merged to the expected downstream input before running `format_check`, `filter_and_merge`, or `convert_to_sft`.
-- For quick local validation of the formatted pipeline, run:
-
-```bash
-python recipes/translation/pipeline/test_pipeline.py
-```
