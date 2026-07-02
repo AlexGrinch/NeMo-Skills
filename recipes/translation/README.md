@@ -90,7 +90,9 @@ Important fields:
 - `expname`: base experiment name; each stage appends its own suffix.
 - `suffix`: optional suffix used in experiment names. Defaults to the config name.
 - `input_file`: original JSONL file.
-- `target_lang`: target language name used by the prompt wrapper.
+- `target_lang`: a single target language name used by the prompt wrapper. Mutually exclusive with `target_langs`.
+- `target_langs`: weighted list of `{language, weight}` objects. Weights must be positive and are normalized automatically. The wrapper uses largest-remainder allocation, so record counts match the requested proportions as closely as integer counts allow.
+- `language_seed`: optional seed (default `0`) used to reproducibly shuffle weighted language assignments.
 - `fields_to_translate`: fields that should be replaced in the final merged output.
 - `fields_to_consider`: fields shown to the model. Defaults to `fields_to_translate`.
 - `from_messages`: when true, fields are extracted from `messages[i].content` by position and merged back into the `messages` array.
@@ -130,6 +132,8 @@ Wraps each concise record as translation prompt input:
 ```json
 {"source_lang": "English", "target_lang": "Simplified Chinese", "src": "{...}"}
 ```
+
+With `target_langs`, every record still has exactly one `target_lang`. For example, 100 valid input rows and weights `0.4/0.3/0.2/0.1` produce exactly 40 German, 30 French, 20 Russian, and 10 Japanese prompts in a seed-controlled shuffled order. The legacy single-language `target_lang` config remains supported.
 
 Default output:
 
