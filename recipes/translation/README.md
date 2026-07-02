@@ -109,7 +109,7 @@ Per-stage configs commonly support:
 
 ### `make_concise`
 
-Keeps only `fields_to_consider` from each input record and adds `_translation_src_id`, a stable hash of the original record. The ID lets downstream stages merge generation records back into the original file without relying only on line alignment.
+Keeps only `fields_to_consider` from each input record and adds `_translation_src_id`, a stable hash of the original record. The ID lets downstream stages merge generation records back into the original file without relying only on line alignment. When the original record contains `metadata.dataset_id`, it is also propagated as `_translation_dataset_id`. Both `_translation_*` fields remain outside the model-visible `src` payload.
 
 Default input:
 
