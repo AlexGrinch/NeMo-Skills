@@ -53,8 +53,7 @@ def mock_generate_file(input_file: str, output_file: str):
 
             row = json.loads(line)
             src = json.loads(row["src"])
-            tgt_lang = json.loads(row["target_lang"])
-            translated = translate_value(src, tgt_lang)
+            translated = translate_value(src, row["tgt_lang"])
             generation = "```json\n" + json.dumps(translated, ensure_ascii=False) + "\n```"
             fout.write(json.dumps({**row, "generation": generation}, ensure_ascii=False) + "\n")
 
