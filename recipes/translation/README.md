@@ -133,7 +133,7 @@ Wraps each concise record as translation prompt input:
 {"source_lang": "English", "target_lang": "Simplified Chinese", "src": "{...}"}
 ```
 
-With `target_langs`, every record still has exactly one `target_lang`. For example, 100 valid input rows and weights `0.4/0.3/0.2/0.1` produce exactly 40 German, 30 French, 20 Russian, and 10 Japanese prompts in a seed-controlled shuffled order. The legacy single-language `target_lang` config remains supported.
+With `target_langs`, every record still has exactly one `target_lang`, and the weighted split is applied independently to every unique `_translation_dataset_id`. For example, each dataset containing 100 rows and weights `0.4/0.3/0.2/0.1` produces 40 German, 30 French, 20 Russian, and 10 Japanese prompts in a seed-controlled shuffled order. Records without a dataset ID are treated as one additional group. For group sizes that do not divide cleanly, largest-remainder allocation gives the closest integer counts. The legacy single-language `target_lang` config remains supported.
 
 Default output:
 
