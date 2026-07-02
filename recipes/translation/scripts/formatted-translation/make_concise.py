@@ -16,7 +16,7 @@
 """
 Produce a concise version of an input JSONL by keeping only the specified fields,
 stamp each output record with a _translation_src_id derived from the original,
-and propagate metadata.dataset_id as _translation_dataset_id when present.
+and metadata.dataset as _translation_dataset_id when present.
 
 Fields prefixed with _translation_ are pipeline metadata. Downstream stages
 carry them outside the model-visible source payload.
@@ -97,8 +97,8 @@ def make_concise_file(
                 concise["_translation_src_id"] = compute_src_id(record)
 
             metadata = record.get("metadata")
-            if isinstance(metadata, dict) and "dataset_id" in metadata:
-                concise["_translation_dataset_id"] = metadata["dataset_id"]
+            if isinstance(metadata, dict) and "dataset" in metadata:
+                concise["_translation_dataset_id"] = metadata["dataset"]
 
             fout.write(json.dumps(concise, ensure_ascii=False) + "\n")
 
