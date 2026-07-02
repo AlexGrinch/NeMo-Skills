@@ -31,14 +31,14 @@ import sys
 from pathlib import Path
 
 
-def translate_value(v):
-    """Recursively prepend '[TRANSLATED] ' to all string leaf values."""
+def translate_value(v, tgt_lang):
+    """Recursively prepend '[Translateed to tgt_lang] ' to all string leaf values."""
     if isinstance(v, str):
-        return "[TRANSLATED] " + v
+        return f"[Translated to {tgt_lang}] " + v
     if isinstance(v, list):
-        return [translate_value(item) for item in v]
+        return [translate_value(item, tgt_lang) for item in v]
     if isinstance(v, dict):
-        return {k: translate_value(val) for k, val in v.items()}
+        return {k: translate_value(val, tgt_lang) for k, val in v.items()}
     return v
 
 
@@ -53,7 +53,8 @@ def mock_generate_file(input_file: str, output_file: str):
 
             row = json.loads(line)
             src = json.loads(row["src"])
-            translated = translate_value(src)
+            tgt_lang = json.loads(row["target_lang"])
+            translated = translate_value(src, tgt_lang)
             generation = "```json\n" + json.dumps(translated, ensure_ascii=False) + "\n```"
             fout.write(json.dumps({**row, "generation": generation}, ensure_ascii=False) + "\n")
 
