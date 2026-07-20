@@ -79,6 +79,94 @@ def _stage_dir(base_output_dir: str, stage_name: str, stage_config: dict) -> str
     return stage_config.get("output_dir", f"{base_output_dir}/{stage_name}")
 
 
+def _parse_cli_arg(args: str | None, flag: str) -> str | None:
+    """Parse either '--flag VALUE' or '--flag=VALUE' from a shell-style argument string."""
+    if not args:
+        return None
+    parts = shlex.split(args)
+    for idx, part in enumerate(parts):
+        if part == flag and idx + 1 < len(parts):
+            return parts[idx + 1]
+        if part.startswith(f"{flag}="):
+            return part.split("=", 1)[1]
+    return None
+
+
+def _parse_int_cli_arg(args: str | None, flag: str) -> int | None:
+    value = _parse_cli_arg(args, flag)
+    return int(value) if value is not None else None
+
+
+def _run_cmd_kwargs_from_stage(stage_kwargs: dict) -> dict:
+    """Keep only kwargs that are meaningful for CPU helper jobs."""
+    allowed = {
+        "mount_paths",
+        "partition",
+        "qos",
+        "time_min",
+        "reuse_code",
+        "reuse_code_exp",
+        "config_dir",
+        "exclusive",
+        "check_mounted_paths",
+        "installation_command",
+        "skip_hf_home_check",
+        "dry_run",
+        "sbatch_kwargs",
+        "container",
+    }
+    return {key: value for key, value in stage_kwargs.items() if key in allowed}
+
+
+def _chunk_generation_config(stage_config: dict, stage_kwargs: dict) -> dict | None:
+    chunk_config = stage_config.get("chunk_long_inputs", False)
+    if not chunk_config:
+        return None
+    if chunk_config is True:
+        chunk_config = {}
+    if not isinstance(chunk_config, dict):
+        raise ValueError("stages.generate.chunk_long_inputs must be a bool or a mapping")
+
+    max_model_len = (
+        chunk_config.get("max_model_len")
+        or stage_config.get("max_model_len")
+        or _parse_int_cli_arg(stage_kwargs.get("server_args"), "--max-model-len")
+    )
+    if max_model_len is None:
+        raise ValueError(
+            "chunk_long_inputs requires max_model_len, either as "
+            "stages.generate.chunk_long_inputs.max_model_len, stages.generate.max_model_len, "
+            "or in stage_kwargs.server_args as '--max-model-len N'."
+        )
+
+    tokens_to_generate = (
+        chunk_config.get("tokens_to_generate")
+        or _parse_int_cli_arg(stage_config.get("inline_args"), "++inference.tokens_to_generate")
+        or 0
+    )
+    endpoint_type = (
+        chunk_config.get("endpoint_type")
+        or _parse_cli_arg(stage_config.get("inline_args"), "++inference.endpoint_type")
+        or "chat"
+    )
+    if endpoint_type not in ("chat", "text"):
+        endpoint_type = "chat"
+
+    return {
+        "max_model_len": int(max_model_len),
+        "tokens_to_generate": int(tokens_to_generate),
+        "safety_margin": int(chunk_config.get("safety_margin", 512)),
+        "prompt_token_budget": chunk_config.get("prompt_token_budget"),
+        "tokenizer": chunk_config.get("tokenizer") or stage_config.get("tokenizer") or stage_kwargs.get("model"),
+        "endpoint_type": endpoint_type,
+        "chars_per_token": float(chunk_config.get("chars_per_token", 4.0)),
+        "input_file": chunk_config.get("input_file"),
+        "map_file": chunk_config.get("map_file"),
+        "raw_output_dir": chunk_config.get("raw_output_dir"),
+        "stage_kwargs": chunk_config.get("stage_kwargs", {}),
+    }
+
+
 # ---------------------------------------------------------------------------
 # Stage: make_concise
 # ---------------------------------------------------------------------------
@@ -234,6 +322,7 @@ def unescape_special_tokens(cluster, expname, run_after, stage_config, **kwargs)
 def generate(cluster, expname, run_after, stage_config, **kwargs):
     """Run LLM translation with a format-specific prompt config."""
     base_output_dir = kwargs["base_output_dir"]
+    fields_to_translate = kwargs["fields_to_translate"]
     pipeline_stages = kwargs.get("pipeline_stages", [])
 
     if "escape_special_tokens" in pipeline_stages:
@@ -244,19 +333,98 @@ def generate(cluster, expname, run_after, stage_config, **kwargs):
     output_dir = _stage_dir(base_output_dir, "generate", stage_config)
     format_config = stage_config["format_config"]
 
-    stage_kwargs = stage_config.get("stage_kwargs", {})
+    stage_kwargs = dict(stage_config.get("stage_kwargs", {}))
     stage_kwargs.setdefault("sbatch_kwargs", {})
     if isinstance(stage_kwargs["sbatch_kwargs"], dict):
         stage_kwargs["sbatch_kwargs"].setdefault("poll_estimated_start_time", False)
 
+    chunk_config = _chunk_generation_config(stage_config, stage_kwargs)
+    if chunk_config is not None and ("preprocess_cmd" in stage_kwargs or "postprocess_cmd" in stage_kwargs):
+        raise ValueError("chunk_long_inputs cannot be combined with stage_kwargs.preprocess_cmd/postprocess_cmd")
+    if chunk_config is None:
+        generate_fn(
+            ctx=wrap_arguments(f"++prompt_config={format_config} {stage_config.get('inline_args', '')} "),
+            cluster=cluster,
+            input_file=input_file,
+            output_dir=output_dir,
+            expname=expname,
+            run_after=run_after,
+            **stage_kwargs,
+        )
+        return
+
+    chunked_input = chunk_config["input_file"] or f"{output_dir}/chunked_input.jsonl"
+    chunk_map = chunk_config["map_file"] or f"{output_dir}/chunk_map.jsonl"
+    raw_output_dir = chunk_config["raw_output_dir"] or f"{output_dir}/chunked_raw"
+    raw_output_file = f"{raw_output_dir}/output.jsonl"
+    final_output_file = f"{output_dir}/output.jsonl"
+    fields_arg = " ".join(shlex.quote(str(field)) for field in fields_to_translate)
+
+    prompt_budget_arg = (
+        f" --prompt-token-budget {int(chunk_config['prompt_token_budget'])}"
+        if chunk_config["prompt_token_budget"] is not None
+        else ""
+    )
+    tokenizer_arg = f" --tokenizer {shlex.quote(str(chunk_config['tokenizer']))}" if chunk_config["tokenizer"] else ""
+
+    helper_stage_kwargs = _run_cmd_kwargs_from_stage(stage_kwargs)
+    helper_stage_kwargs.update(chunk_config["stage_kwargs"])
+
+    chunk_expname = f"{expname}-chunk-input"
+    raw_expname = f"{expname}-raw"
+
+    chunk_cmd = (
+        f"python {_SCRIPTS_DIR}/chunk_generate_input.py "
+        f" --input {shlex.quote(input_file)}"
+        f" --output {shlex.quote(chunked_input)}"
+        f" --map-output {shlex.quote(chunk_map)}"
+        f" --fields-to-translate {fields_arg}"
+        f" --prompt-config {shlex.quote(format_config)}"
+        f" --max-model-len {chunk_config['max_model_len']}"
+        f" --tokens-to-generate {chunk_config['tokens_to_generate']}"
+        f" --safety-margin {chunk_config['safety_margin']}"
+        f" --endpoint-type {chunk_config['endpoint_type']}"
+        f" --chars-per-token {chunk_config['chars_per_token']}"
+        f"{prompt_budget_arg}"
+        f"{tokenizer_arg}"
+    )
+    run_cmd(
+        ctx=wrap_arguments(chunk_cmd),
+        cluster=cluster,
+        log_dir=f"{output_dir}/logs",
+        expname=chunk_expname,
+        run_after=run_after,
+        num_gpus=0,
+        **helper_stage_kwargs,
+    )
+
     generate_fn(
         ctx=wrap_arguments(f"++prompt_config={format_config} {stage_config.get('inline_args', '')} "),
         cluster=cluster,
-        input_file=input_file,
-        output_dir=output_dir,
-        expname=expname,
-        run_after=run_after,
+        input_file=chunked_input,
+        output_dir=raw_output_dir,
+        expname=raw_expname,
+        run_after=[chunk_expname],
         **stage_kwargs,
+    )
+
+    stitch_cmd = (
+        f"{_done_check(raw_output_file)} && "
+        f"python {_SCRIPTS_DIR}/stitch_generate_chunks.py "
+        f" --input {shlex.quote(raw_output_file)}"
+        f" --map {shlex.quote(chunk_map)}"
+        f" --output {shlex.quote(final_output_file)}"
+        f" --fields-to-translate {fields_arg}"
+        f" && touch {shlex.quote(final_output_file)}.done"
+    )
+    run_cmd(
+        ctx=wrap_arguments(stitch_cmd),
+        cluster=cluster,
+        log_dir=f"{output_dir}/logs",
+        expname=expname,
+        run_after=[raw_expname],
+        num_gpus=0,
+        **helper_stage_kwargs,
     )
 
 

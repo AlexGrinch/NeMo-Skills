@@ -194,8 +194,22 @@ stages:
       server_type: vllm
       model: /path/to/model
       server_gpus: 8
+      server_args: "--max-model-len 32768"
       num_chunks: 8
 ```
+
+Long top-level string fields can be split before generation and stitched back into the same output shape:
+
+```yaml
+stages:
+  generate:
+    chunk_long_inputs:
+      safety_margin: 512
+      # max_model_len defaults to stage_kwargs.server_args --max-model-len when present.
+      # tokenizer defaults to stage_kwargs.model when present.
+```
+
+When enabled, oversized rows are expanded into `{base_output_dir}/generate/chunked_input.jsonl`, raw model outputs are written under `{base_output_dir}/generate/chunked_raw/`, and the stitch step writes the normal `{base_output_dir}/generate/output.jsonl`. The chunker uses `fields_to_translate` as top-level string fields to split; rows that already fit the model length pass through unchanged.
 
 Generation output normally lands under:
 

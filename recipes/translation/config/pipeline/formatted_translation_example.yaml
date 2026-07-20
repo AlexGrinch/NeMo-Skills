@@ -62,6 +62,11 @@ stages:
 
   generate:
     format_config: recipes/translation/config/formatted-translation/format_nano2.yaml
+    # Enable to split oversized top-level string fields before LLM generation.
+    # max_model_len defaults to stage_kwargs.server_args --max-model-len when present;
+    # tokenizer defaults to stage_kwargs.model.
+    # chunk_long_inputs:
+    #   safety_margin: 512
     inline_args: >-
       ++inference.endpoint_type=chat
       ++inference.temperature=0.6
@@ -70,6 +75,7 @@ stages:
       server_type: vllm
       model: /path/to/model
       server_gpus: 1
+      # server_args: "--max-model-len 65536"
       num_chunks: 1
 
   unescape_special_tokens:
