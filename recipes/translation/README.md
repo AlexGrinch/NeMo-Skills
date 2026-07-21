@@ -93,9 +93,10 @@ Important fields:
 - `target_lang`: a single target language name used by the prompt wrapper. Mutually exclusive with `target_langs`.
 - `target_langs`: weighted list of `{language, weight}` objects. Weights must be positive and are normalized automatically. The wrapper uses largest-remainder allocation, so record counts match the requested proportions as closely as integer counts allow.
 - `language_seed`: optional seed (default `0`) used to reproducibly shuffle weighted language assignments.
-- `fields_to_translate`: fields that should be replaced in the final merged output.
-- `fields_to_consider`: fields shown to the model. Defaults to `fields_to_translate`.
-- `from_messages`: when true, fields are extracted from `messages[i].content` by position and merged back into the `messages` array.
+- `fields_to_translate`: fields that should be replaced in the final merged output. Optional when `from_messages: true`.
+- `fields_to_consider`: fields shown to the model. Defaults to `fields_to_translate`. Ignored in the default `from_messages` flow.
+- `from_messages`: when true, the pipeline extracts translatable text fields from `.messages`, sends only that concise message payload to the model, and merges translated values back into the original records. Output records preserve the same fields as the input records; only text inside `.messages` changes.
+- `message_text_fields`: optional list of message field names to translate with `from_messages`. By default this includes `content`, `reasoning_content`, `text`, `refusal`, and any field ending in `_content`.
 - `pipeline_stages`: default ordered stage sequence.
 - `stages.<stage_name>`: per-stage overrides.
 
@@ -123,7 +124,7 @@ Default output:
 {base_output_dir}/make_concise/concise.jsonl
 ```
 
-If `from_messages: true`, this stage maps configured fields to `messages[i].content` by position.
+If `from_messages: true`, this stage emits a concise `{"messages": [...]}` object that preserves message indexes and keeps only translatable message text fields. Empty message objects are retained as placeholders so merging can preserve the original message order.
 
 ### `wrap`
 
@@ -348,7 +349,18 @@ stages:
     generation_file: /optional/custom/generation.jsonl
 ```
 
-If `from_messages: true`, translated fields are written back into `messages[i].content` by position. Otherwise top-level fields listed in `fields_to_translate` are updated.
+If `from_messages: true`, translated values from the generated `messages` payload are merged back into the original `messages` array by index and field name. All other top-level fields and non-translated message fields are copied from the original record unchanged. Otherwise top-level fields listed in `fields_to_translate` are updated.
+
+For message-style translation, use:
+
+```yaml
+from_messages: true
+stages:
+  generate:
+    format_config: recipes/translation/config/formatted-translation/format_messages.yaml
+  filter_and_merge:
+    checker: format_messages
+```
 
 ### `curate`
 

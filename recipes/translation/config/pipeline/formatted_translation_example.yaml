@@ -5,11 +5,13 @@ expname: formatted-translation
 cluster: cw-dfw-cpu
 
 # Top-level fields that should be replaced by translated values after validation.
+# Optional when from_messages: true.
 fields_to_translate:
   - problem
   - generation
 
 # Fields shown to the model. Defaults to fields_to_translate if omitted.
+# Ignored when from_messages: true unless you run in legacy positional mode.
 fields_to_consider:
   - problem
   - generation
@@ -30,8 +32,13 @@ target_langs:
     weight: 0.1
 language_seed: 0
 
-# Set this when translating message-style data and mapping fields by message position.
+# Set this when translating message-style data. In this mode the pipeline extracts
+# all meaningful text fields from .messages (content, reasoning_content, text,
+# refusal, and fields ending in _content) and merges only those translated values
+# back into the original record.
 # from_messages: true
+# Optional override for custom message text fields:
+# message_text_fields: [content, reasoning_content, text]
 
 pipeline_stages:
   - make_concise
@@ -61,6 +68,7 @@ stages:
     # output_file: ...  # defaults to {base_output_dir}/escape_special_tokens/escaped.jsonl
 
   generate:
+    # Use format_messages.yaml when from_messages: true.
     format_config: recipes/translation/config/formatted-translation/format_nano2.yaml
     # Enable to split oversized top-level string fields before LLM generation.
     # max_model_len defaults to stage_kwargs.server_args --max-model-len when present;
@@ -85,6 +93,7 @@ stages:
 
   format_check:
     # checker can be omitted here if stages.filter_and_merge.checker is set.
+    # Use checker: format_messages when from_messages: true.
     checker: format_nano2
     # input_file: ...       # defaults to unescape_special_tokens/unescaped.jsonl if that stage is present,
     #                       # otherwise generate/output.jsonl
@@ -98,6 +107,7 @@ stages:
     # verbose: false
 
   filter_and_merge:
+    # Use checker: format_messages when from_messages: true.
     checker: format_nano2
     # original_file: ...    # defaults to top-level input_file
     # generation_file: ...  # defaults to unescape_special_tokens/unescaped.jsonl if that stage is present,

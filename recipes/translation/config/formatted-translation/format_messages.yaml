@@ -1,0 +1,33 @@
+# format_messages
+# input:
+# {
+#   "messages": [
+#     {"content": "..."},
+#     {"content": "...", "reasoning_content": "..."}
+#   ]
+# }
+#
+# formatting constraints:
+#   - translate every non-empty string value present in each messages entry
+#   - keep the same top-level keys, message count, per-message keys, and nested list/object shape
+#   - do not add role, metadata, translation, or any other fields
+#   - preserve <<ESC:...>> placeholders exactly as-is
+
+system: You are an experienced translator that translates text accurately into fluent text in the target language while preserving JSON structure exactly.
+
+user: |-
+  You need to translate {source_lang} text to {target_lang}.
+
+  The input is a JSON object containing a "messages" list. Each message object contains only text fields that should be translated. Empty message objects are placeholders that preserve message positions.
+
+  Please follow these formatting rules:
+
+  (1) Return valid JSON only. Do not wrap it in markdown.
+  (2) Keep exactly the same top-level fields as the input.
+  (3) Keep exactly the same number of messages.
+  (4) For each message, keep exactly the same fields and nested list/object structure.
+  (5) Translate every non-empty string value inside the message fields to {target_lang}.
+  (6) Leave empty objects and empty arrays unchanged.
+  (7) Preserve any <<ESC:...>> placeholders exactly as-is. Do not translate, remove, or alter them.
+
+  {source_lang}: {src}

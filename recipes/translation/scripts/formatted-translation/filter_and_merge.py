@@ -40,11 +40,13 @@ Usage:
 """
 
 import argparse
+import copy
 import hashlib
 import itertools
 import json
 import sys
 from pathlib import Path
+from typing import Any
 
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -71,6 +73,72 @@ def iter_nonempty(f):
 def write_original(fout, raw_line, on_fail):
     if on_fail == "keep":
         fout.write(raw_line if raw_line.endswith("\n") else raw_line + "\n")
+
+
+def merge_translated_value(original: Any, translated: Any) -> Any:
+    """Return original's shape with translated string leaves copied in."""
+    if isinstance(original, str):
+        return translated if isinstance(translated, str) else original
+    if isinstance(original, list) and isinstance(translated, list):
+        merged = copy.deepcopy(original)
+        for index, translated_item in enumerate(translated[: len(merged)]):
+            merged[index] = merge_translated_value(merged[index], translated_item)
+        return merged
+    if isinstance(original, dict) and isinstance(translated, dict):
+        merged = copy.deepcopy(original)
+        for key, translated_value in translated.items():
+            if key in merged:
+                merged[key] = merge_translated_value(merged[key], translated_value)
+        return merged
+    return original
+
+
+def merge_message_translation(message: Any, translation: Any) -> Any:
+    if not isinstance(message, dict):
+        return message
+
+    merged = copy.deepcopy(message)
+    if isinstance(translation, str):
+        if isinstance(merged.get("content"), str):
+            merged["content"] = translation
+        return merged
+
+    if not isinstance(translation, dict):
+        return merged
+
+    for key, translated_value in translation.items():
+        if key == "translation":
+            continue
+        if key in merged:
+            merged[key] = merge_translated_value(merged[key], translated_value)
+    return merged
+
+
+def merge_translated_messages(original_messages: Any, translated_payload: dict, fields_to_translate: list[str]) -> Any:
+    if not isinstance(original_messages, list):
+        return original_messages
+
+    merged_messages = copy.deepcopy(original_messages)
+    translated_messages = translated_payload.get("messages")
+    if isinstance(translated_messages, list):
+        for index, translated_message in enumerate(translated_messages[: len(merged_messages)]):
+            if not isinstance(translated_message, dict):
+                continue
+            translation = translated_message.get("translation", translated_message)
+            merged_messages[index] = merge_message_translation(merged_messages[index], translation)
+        return merged_messages
+
+    # Backward-compatible fallback for the old from_messages behavior where
+    # fields_to_translate mapped synthetic fields to messages by position.
+    translation = translated_payload.get("translation")
+    if isinstance(translation, dict):
+        for index, field in enumerate(fields_to_translate):
+            if index >= len(merged_messages):
+                break
+            if field in translation and isinstance(merged_messages[index], dict):
+                merged_messages[index] = merge_message_translation(merged_messages[index], translation[field])
+
+    return merged_messages
 
 
 def filter_and_merge(
@@ -162,17 +230,23 @@ def filter_and_merge(
                 continue
 
             translated = json.loads(extracted)
-            translation_source = translated
-            if isinstance(translated.get("translation"), dict):
-                translation_source = translated["translation"]
-            output_record = dict(orig_record)
+            if not isinstance(translated, dict):
+                failed_extract += 1
+                if verbose:
+                    print(f"Original line {orig_line_num}: extracted JSON was not an object", file=sys.stderr)
+                write_original(fout, orig_raw, on_fail)
+                orig_item = next(orig_iter, None)
+                continue
+
+            output_record = copy.deepcopy(orig_record)
             if to_messages and "messages" in output_record:
-                messages = [dict(m) for m in output_record["messages"]]
-                for i, field in enumerate(fields_to_translate):
-                    if field in translation_source and i < len(messages):
-                        messages[i]["content"] = translation_source[field]
-                output_record["messages"] = messages
+                output_record["messages"] = merge_translated_messages(
+                    output_record["messages"], translated, fields_to_translate
+                )
             else:
+                translation_source = translated
+                if isinstance(translated.get("translation"), dict):
+                    translation_source = translated["translation"]
                 output_record.update(
                     {k: translation_source[k] for k in fields_to_translate if k in translation_source}
                 )
@@ -210,10 +284,10 @@ def main():
     parser.add_argument("--generation-file", required=True, help="Generation JSONL (src + generation fields)")
     parser.add_argument(
         "--fields-to-translate",
-        nargs="+",
-        required=True,
+        nargs="*",
+        default=[],
         metavar="FIELD",
-        help="Fields to replace in the original object with translated values",
+        help="Fields to replace in the original object with translated values. Optional with --to-messages.",
     )
     parser.add_argument("--output", required=True, help="Path to output JSONL")
     parser.add_argument(
@@ -225,10 +299,12 @@ def main():
     parser.add_argument(
         "--to-messages",
         action="store_true",
-        help="Write translated fields back into the messages array by position instead of top-level keys",
+        help="Merge translated message text fields back into the original messages array",
     )
     parser.add_argument("--verbose", action="store_true", help="Print per-line details to stderr")
     args = parser.parse_args()
+    if not args.to_messages and not args.fields_to_translate:
+        parser.error("--fields-to-translate is required unless --to-messages is set")
 
     checker = load_format_checker(args.checker)
     if checker is None:

@@ -35,7 +35,7 @@ Required top-level config keys:
   base_output_dir:      root directory for all stage outputs
   cluster:              cluster name (passed to pipeline utilities)
   expname:              base experiment name
-  fields_to_translate:  list of top-level fields that must be translated
+  fields_to_translate:  list of top-level fields that must be translated; optional with from_messages
   fields_to_consider:   (optional) fields shown to the model; defaults to fields_to_translate
   input_file:           path to the original JSONL
   target_lang:          one target language name (e.g. "German"), or
@@ -182,14 +182,22 @@ def make_concise(cluster, expname, run_after, stage_config, **kwargs):
     output_dir = _stage_dir(base_output_dir, "make_concise", stage_config)
     output_file = stage_config.get("output_file", f"{output_dir}/concise.jsonl")
 
-    fields_arg = " ".join(fields_to_consider)
+    fields_arg = " ".join(shlex.quote(str(field)) for field in fields_to_consider)
+    fields_option = f" --fields {fields_arg}" if fields_arg else ""
     from_messages_flag = " --from-messages" if from_messages else ""
+    message_text_fields = kwargs.get("message_text_fields")
+    message_text_fields_arg = ""
+    if message_text_fields:
+        message_text_fields_arg = " --message-text-fields " + " ".join(
+            shlex.quote(str(field)) for field in message_text_fields
+        )
     cmd = (
         f"python {_SCRIPTS_DIR}/make_concise.py "
-        f"    --input {input_file} "
-        f"    --output {output_file} "
-        f"    --fields {fields_arg} "
+        f"    --input {shlex.quote(str(input_file))} "
+        f"    --output {shlex.quote(str(output_file))} "
+        f"    {fields_option} "
         f"    {from_messages_flag} "
+        f"    {message_text_fields_arg} "
     )
     run_cmd(
         ctx=wrap_arguments(cmd),
@@ -323,6 +331,7 @@ def generate(cluster, expname, run_after, stage_config, **kwargs):
     """Run LLM translation with a format-specific prompt config."""
     base_output_dir = kwargs["base_output_dir"]
     fields_to_translate = kwargs["fields_to_translate"]
+    from_messages = kwargs.get("from_messages", False)
     pipeline_stages = kwargs.get("pipeline_stages", [])
 
     if "escape_special_tokens" in pipeline_stages:
@@ -339,6 +348,8 @@ def generate(cluster, expname, run_after, stage_config, **kwargs):
         stage_kwargs["sbatch_kwargs"].setdefault("poll_estimated_start_time", False)
 
     chunk_config = _chunk_generation_config(stage_config, stage_kwargs)
+    if chunk_config is not None and from_messages:
+        raise ValueError("chunk_long_inputs does not support from_messages inputs yet")
     if chunk_config is not None and ("preprocess_cmd" in stage_kwargs or "postprocess_cmd" in stage_kwargs):
         raise ValueError("chunk_long_inputs cannot be combined with stage_kwargs.preprocess_cmd/postprocess_cmd")
     if chunk_config is None:
@@ -547,19 +558,20 @@ def filter_and_merge(cluster, expname, run_after, stage_config, **kwargs):
     output_dir = _stage_dir(base_output_dir, "filter_and_merge", stage_config)
     output_file = stage_config.get("output_file", f"{output_dir}/translated.jsonl")
 
-    fields_arg = " ".join(fields_to_translate)
+    fields_arg = " ".join(shlex.quote(str(field)) for field in fields_to_translate)
+    fields_option = f" --fields-to-translate {fields_arg}" if fields_arg else ""
     on_fail = stage_config.get("on_fail", "keep")
     to_messages_flag = "--to-messages" if from_messages else ""
     verbose_flag = "--verbose" if stage_config.get("verbose", False) else ""
 
     cmd = (
         f"python {_SCRIPTS_DIR}/filter_and_merge.py "
-        f"    --checker {checker_name} "
-        f"    --original-file {original_file} "
-        f"    --generation-file {generation_file} "
-        f"    --fields-to-translate {fields_arg} "
-        f"    --output {output_file} "
-        f"    --on-fail {on_fail} "
+        f"    --checker {shlex.quote(str(checker_name))} "
+        f"    --original-file {shlex.quote(str(original_file))} "
+        f"    --generation-file {shlex.quote(str(generation_file))} "
+        f"    {fields_option} "
+        f"    --output {shlex.quote(str(output_file))} "
+        f"    --on-fail {shlex.quote(str(on_fail))} "
         f"    {to_messages_flag} "
         f"    {verbose_flag} "
     )
@@ -797,9 +809,15 @@ if __name__ == "__main__":
     suffix = config.get("suffix", args.config)
     cluster = config["cluster"]
     expname_base = config["expname"]
-    fields_to_translate = config["fields_to_translate"]
-    fields_to_consider = config.get("fields_to_consider", fields_to_translate)
     from_messages = config.get("from_messages", False)
+    if "fields_to_translate" in config:
+        fields_to_translate = config.get("fields_to_translate") or []
+    elif from_messages:
+        fields_to_translate = []
+    else:
+        raise ValueError(f"{config_path} must define 'fields_to_translate' unless 'from_messages' is true.")
+    fields_to_consider = config.get("fields_to_consider", fields_to_translate) or []
+    message_text_fields = config.get("message_text_fields")
     input_file = config.get("input_file")
     target_lang = config.get("target_lang")
     target_langs = config.get("target_langs")
@@ -839,6 +857,7 @@ if __name__ == "__main__":
             fields_to_translate=fields_to_translate,
             fields_to_consider=fields_to_consider,
             from_messages=from_messages,
+            message_text_fields=message_text_fields,
             input_file=input_file,
             target_lang=target_lang,
             target_langs=target_langs,
