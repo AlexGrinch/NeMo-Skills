@@ -18,25 +18,23 @@ Validate translated outputs with a format checker and merge passing translations
 back into the original JSON objects.
 
 Memory strategy (O(1), designed for very large files):
-  Both files are streamed simultaneously.  The generation file is treated as an
-  ordered subsequence of the original: for each generation record we advance the
-  original file until _translation_src_id matches, writing any skipped original
-  records according to --on-fail.  Once the IDs match we run the format check,
-  extract the translated fields, and write the merged record.  Any remaining
-  original records after the generation file is exhausted are also handled by
-  --on-fail.
+  The generation file is treated as an ordered subsequence of the original.
+  Each original record may have one or more consecutive generation rows. For
+  message-mode translation, make_concise emits one generation row per message
+  text field, and this script groups those rows by _translation_source_index
+  (or by _translation_src_id for older files) before writing one output record.
 
-  This assumes the generation file preserves the relative order of the original.
-  nemo_skills sorts generation output by _async_position, so this holds as long
-  as the pipeline is run correctly.
+  This assumes the generation file preserves the relative order of the concise
+  input. nemo_skills sorts generation output by _async_position, so this holds
+  as long as the pipeline is run correctly.
 
 Usage:
-    python filter_and_merge.py \\
-        --checker format_nano1 \\
-        --original-file input.jsonl \\
-        --generation-file generate/output-rs0.jsonl \\
-        --fields-to-translate problem generation \\
-        --output translated.jsonl
+    python filter_and_merge.py \
+        --checker format_messages \
+        --original-file input.jsonl \
+        --generation-file generate/output-rs0.jsonl \
+        --output translated.jsonl \
+        --to-messages
 """
 
 import argparse
@@ -46,7 +44,7 @@ import itertools
 import json
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable
 
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -59,13 +57,15 @@ def compute_src_id(record: dict) -> str:
 
 
 def iter_nonempty(f):
-    """Yield (line_num, raw_line, parsed_record) for each non-empty line."""
+    """Yield (source_index, line_num, raw_line, parsed_record) for each non-empty line."""
+    source_index = 0
     for line_num, raw_line in enumerate(f, 1):
         stripped = raw_line.strip()
         if not stripped:
             continue
         try:
-            yield line_num, raw_line, json.loads(stripped)
+            yield source_index, line_num, raw_line, json.loads(stripped)
+            source_index += 1
         except json.JSONDecodeError as e:
             print(f"Line {line_num}: skipped (invalid JSON: {e})", file=sys.stderr)
 
@@ -114,12 +114,32 @@ def merge_message_translation(message: Any, translation: Any) -> Any:
     return merged
 
 
-def merge_translated_messages(original_messages: Any, translated_payload: dict, fields_to_translate: list[str]) -> Any:
+def merge_translated_messages(
+    original_messages: Any,
+    translated_payload: dict,
+    fields_to_translate: list[str],
+    message_index: int | None = None,
+) -> Any:
     if not isinstance(original_messages, list):
         return original_messages
 
     merged_messages = copy.deepcopy(original_messages)
     translated_messages = translated_payload.get("messages")
+
+    if message_index is not None:
+        if (
+            isinstance(message_index, int)
+            and not isinstance(message_index, bool)
+            and 0 <= message_index < len(merged_messages)
+            and isinstance(translated_messages, list)
+            and translated_messages
+            and isinstance(translated_messages[0], dict)
+        ):
+            translated_message = translated_messages[0]
+            translation = translated_message.get("translation", translated_message)
+            merged_messages[message_index] = merge_message_translation(merged_messages[message_index], translation)
+        return merged_messages
+
     if isinstance(translated_messages, list):
         for index, translated_message in enumerate(translated_messages[: len(merged_messages)]):
             if not isinstance(translated_message, dict):
@@ -139,6 +159,105 @@ def merge_translated_messages(original_messages: Any, translated_payload: dict, 
                 merged_messages[index] = merge_message_translation(merged_messages[index], translation[field])
 
     return merged_messages
+
+
+def generation_source_key(record: dict, match_mode: str):
+    if match_mode == "source_index":
+        return record.get("_translation_source_index")
+    if match_mode == "src_id":
+        return record.get("_translation_src_id")
+    return None
+
+
+def original_source_key(source_index: int, record: dict, match_mode: str):
+    if match_mode == "source_index":
+        return source_index
+    if match_mode == "src_id":
+        return compute_src_id(record)
+    return None
+
+
+def generation_group(first_item, gen_iter: Iterable, match_mode: str):
+    group = [first_item]
+    next_item = next(gen_iter, None)
+    if match_mode == "positional":
+        return group, next_item
+
+    group_key = generation_source_key(first_item[3], match_mode)
+    while next_item is not None and generation_source_key(next_item[3], match_mode) == group_key:
+        group.append(next_item)
+        next_item = next(gen_iter, None)
+    return group, next_item
+
+
+def extract_translated_payload(gen_record: dict, checker, verbose: bool, orig_line_num: int):
+    src = gen_record.get("src", "")
+    generation = gen_record.get("generation", "")
+
+    if not checker.check(src, generation):
+        if verbose:
+            print(f"Original line {orig_line_num}: failed format check", file=sys.stderr)
+        return None, "check"
+
+    extracted = extract_first_valid_json(generation)
+    if extracted is None:
+        if verbose:
+            print(f"Original line {orig_line_num}: failed JSON extraction", file=sys.stderr)
+        return None, "extract"
+
+    translated = json.loads(extracted)
+    if not isinstance(translated, dict):
+        if verbose:
+            print(f"Original line {orig_line_num}: extracted JSON was not an object", file=sys.stderr)
+        return None, "extract"
+
+    return translated, None
+
+
+def merge_generation_group(
+    *,
+    orig_record: dict,
+    orig_line_num: int,
+    gen_group: list[tuple[int, int, str, dict]],
+    checker,
+    fields_to_translate: list[str],
+    to_messages: bool,
+    verbose: bool,
+):
+    output_record = copy.deepcopy(orig_record)
+    failed_check = failed_extract = 0
+
+    for _, _, _, gen_record in gen_group:
+        translated, error_kind = extract_translated_payload(gen_record, checker, verbose, orig_line_num)
+        if error_kind == "check":
+            failed_check += 1
+            continue
+        if error_kind == "extract":
+            failed_extract += 1
+            continue
+
+        if gen_record.get("_translation_noop"):
+            continue
+
+        if to_messages and "messages" in output_record:
+            message_index = gen_record.get("_translation_message_index")
+            output_record["messages"] = merge_translated_messages(
+                output_record["messages"],
+                translated,
+                fields_to_translate,
+                message_index=message_index,
+            )
+        else:
+            translation_source = translated
+            if isinstance(translated.get("translation"), dict):
+                translation_source = translated["translation"]
+            output_record.update(
+                {k: translation_source[k] for k in fields_to_translate if k in translation_source}
+            )
+
+    if failed_check or failed_extract:
+        return None, failed_check, failed_extract
+    return output_record, failed_check, failed_extract
 
 
 def filter_and_merge(
@@ -163,25 +282,42 @@ def filter_and_merge(
         orig_iter = iter_nonempty(forig)
         gen_iter = iter_nonempty(fgen)
 
-        # Peek at first generation record to decide pairing strategy.
         first_gen = next(gen_iter, None)
-        if first_gen is not None:
+        if first_gen is None:
+            pending_gen = None
+            match_mode = "positional"
+        else:
             gen_iter = itertools.chain([first_gen], gen_iter)
-            _, _, first_record = first_gen
-            use_src_id = "_translation_src_id" in first_record
-            if not use_src_id:
-                print("Note: no '_translation_src_id' in generation; using positional matching.", file=sys.stderr)
+            _, _, _, first_record = first_gen
+            if "_translation_source_index" in first_record:
+                match_mode = "source_index"
+            elif "_translation_src_id" in first_record:
+                match_mode = "src_id"
+            else:
+                match_mode = "positional"
+                print("Note: no translation source metadata in generation; using positional matching.", file=sys.stderr)
+            pending_gen = next(gen_iter, None)
 
         orig_item = next(orig_iter, None)
 
-        for gen_line_num, gen_raw, gen_record in gen_iter:
-            if use_src_id:
-                # Advance original until IDs match, writing skipped records per --on-fail.
-                gen_src_id = gen_record["_translation_src_id"]
+        while pending_gen is not None:
+            gen_group, pending_gen = generation_group(pending_gen, gen_iter, match_mode)
+            group_key = generation_source_key(gen_group[0][3], match_mode)
+
+            if match_mode == "positional":
+                if orig_item is None:
+                    print(
+                        f"Warning: generation line {gen_group[0][1]} has no matching original (original exhausted).",
+                        file=sys.stderr,
+                    )
+                    continue
+                orig_source_index, orig_line_num, orig_raw, orig_record = orig_item
+                total += 1
+            else:
                 while orig_item is not None:
-                    orig_line_num, orig_raw, orig_record = orig_item
+                    orig_source_index, orig_line_num, orig_raw, orig_record = orig_item
                     total += 1
-                    if compute_src_id(orig_record) == gen_src_id:
+                    if original_source_key(orig_source_index, orig_record, match_mode) == group_key:
                         break
                     skipped_orig += 1
                     if verbose:
@@ -193,70 +329,33 @@ def filter_and_merge(
                     orig_item = next(orig_iter, None)
                 else:
                     print(
-                        f"Warning: generation line {gen_line_num} (src_id={gen_src_id}) has no matching original record.",
+                        f"Warning: generation line {gen_group[0][1]} (source={group_key}) has no matching original record.",
                         file=sys.stderr,
                     )
                     continue
+
+            output_record, group_failed_check, group_failed_extract = merge_generation_group(
+                orig_record=orig_record,
+                orig_line_num=orig_line_num,
+                gen_group=gen_group,
+                checker=checker,
+                fields_to_translate=fields_to_translate,
+                to_messages=to_messages,
+                verbose=verbose,
+            )
+            failed_check += group_failed_check
+            failed_extract += group_failed_extract
+
+            if output_record is None:
+                write_original(fout, orig_raw, on_fail)
             else:
-                # Positional: just take the next original line.
-                if orig_item is None:
-                    print(
-                        f"Warning: generation line {gen_line_num} has no matching original (original exhausted).",
-                        file=sys.stderr,
-                    )
-                    continue
-                orig_line_num, orig_raw, orig_record = orig_item
-                total += 1
+                fout.write(json.dumps(output_record, ensure_ascii=False) + "\n")
+                merged += 1
 
-            # Validate and merge.
-            src = gen_record.get("src", "")
-            generation = gen_record.get("generation", "")
-
-            if not checker.check(src, generation):
-                failed_check += 1
-                if verbose:
-                    print(f"Original line {orig_line_num}: failed format check", file=sys.stderr)
-                write_original(fout, orig_raw, on_fail)
-                orig_item = next(orig_iter, None)
-                continue
-
-            extracted = extract_first_valid_json(generation)
-            if extracted is None:
-                failed_extract += 1
-                if verbose:
-                    print(f"Original line {orig_line_num}: failed JSON extraction", file=sys.stderr)
-                write_original(fout, orig_raw, on_fail)
-                orig_item = next(orig_iter, None)
-                continue
-
-            translated = json.loads(extracted)
-            if not isinstance(translated, dict):
-                failed_extract += 1
-                if verbose:
-                    print(f"Original line {orig_line_num}: extracted JSON was not an object", file=sys.stderr)
-                write_original(fout, orig_raw, on_fail)
-                orig_item = next(orig_iter, None)
-                continue
-
-            output_record = copy.deepcopy(orig_record)
-            if to_messages and "messages" in output_record:
-                output_record["messages"] = merge_translated_messages(
-                    output_record["messages"], translated, fields_to_translate
-                )
-            else:
-                translation_source = translated
-                if isinstance(translated.get("translation"), dict):
-                    translation_source = translated["translation"]
-                output_record.update(
-                    {k: translation_source[k] for k in fields_to_translate if k in translation_source}
-                )
-            fout.write(json.dumps(output_record, ensure_ascii=False) + "\n")
-            merged += 1
             orig_item = next(orig_iter, None)
 
-        # Drain any remaining original records.
         while orig_item is not None:
-            orig_line_num, orig_raw, orig_record = orig_item
+            _, orig_line_num, orig_raw, _ = orig_item
             total += 1
             skipped_orig += 1
             if verbose:

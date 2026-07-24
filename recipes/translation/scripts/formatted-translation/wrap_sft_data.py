@@ -71,23 +71,44 @@ def _dataset_seed(seed: int, dataset_key: tuple[str, str]) -> int:
     return int.from_bytes(hashlib.sha256(value).digest()[:8], "big")
 
 
-def _allocate_languages_by_dataset(
-    dataset_keys: list[tuple[str, str]], language_weights: list[dict], seed: int = 0
-) -> list[str]:
-    """Allocate the requested language proportions independently within each dataset."""
-    _validate_language_weights(language_weights)
-    groups: dict[tuple[str, str], list[int]] = {}
-    for index, dataset_key in enumerate(dataset_keys):
-        groups.setdefault(dataset_key, []).append(index)
+def _source_group_key(record: dict, row_index: int) -> tuple[tuple[str, str], tuple[str, str]]:
+    """Return the source-record key used for language assignment."""
+    if "_translation_source_index" in record:
+        source_value = json.dumps(record["_translation_source_index"], sort_keys=True, ensure_ascii=False)
+        source_key = ("source_index", source_value)
+    elif "_translation_src_id" in record:
+        source_value = json.dumps(record["_translation_src_id"], sort_keys=True, ensure_ascii=False)
+        source_key = ("src_id", source_value)
+    else:
+        source_key = ("row", str(row_index))
+    return _dataset_group_key(record), source_key
 
-    assignments = [""] * len(dataset_keys)
-    for dataset_key, indices in groups.items():
+
+def _allocate_languages_by_source_group(
+    source_group_keys: list[tuple[tuple[str, str], tuple[str, str]]],
+    language_weights: list[dict],
+    seed: int = 0,
+) -> list[str]:
+    """Allocate language proportions per source record, not per split task."""
+    _validate_language_weights(language_weights)
+    groups_by_dataset: dict[tuple[str, str], list[tuple[tuple[str, str], tuple[str, str]]]] = {}
+    seen: set[tuple[tuple[str, str], tuple[str, str]]] = set()
+    for group_key in source_group_keys:
+        dataset_key, _ = group_key
+        if group_key in seen:
+            continue
+        groups_by_dataset.setdefault(dataset_key, []).append(group_key)
+        seen.add(group_key)
+
+    assignments_by_group: dict[tuple[tuple[str, str], tuple[str, str]], str] = {}
+    for dataset_key, group_keys in groups_by_dataset.items():
         group_assignments = _allocate_languages(
-            len(indices), language_weights, _dataset_seed(seed, dataset_key)
+            len(group_keys), language_weights, _dataset_seed(seed, dataset_key)
         )
-        for index, language in zip(indices, group_assignments):
-            assignments[index] = language
-    return assignments
+        for group_key, language in zip(group_keys, group_assignments):
+            assignments_by_group[group_key] = language
+
+    return [assignments_by_group[group_key] for group_key in source_group_keys]
 
 
 def _read_valid_records(input_path: Path, warn: bool = True):
@@ -117,7 +138,7 @@ def wrap_jsonl_data(
         input_file: Path to input JSONL file
         output_file: Path to output JSONL file
         target_lang: A single target language (legacy mode)
-        target_langs: Weighted target language objects, applied independently per dataset
+        target_langs: Weighted target language objects, applied independently per dataset/source record
         seed: Random seed used to shuffle per-dataset weighted assignments
     """
     input_path = Path(input_file)
@@ -130,13 +151,20 @@ def wrap_jsonl_data(
     if (target_lang is None) == (target_langs is None):
         raise ValueError("specify exactly one of target_lang or target_langs")
 
-    dataset_keys = [_dataset_group_key(record) for record in _read_valid_records(input_path)]
+    source_group_keys = [
+        _source_group_key(record, row_index)
+        for row_index, record in enumerate(_read_valid_records(input_path))
+    ]
     if target_langs is not None:
-        assignments = _allocate_languages_by_dataset(dataset_keys, target_langs, seed)
+        assignments = _allocate_languages_by_source_group(source_group_keys, target_langs, seed)
     else:
         if not isinstance(target_lang, str) or not target_lang.strip():
             raise ValueError("target_lang must be a non-empty string")
-        assignments = [target_lang.strip()] * len(dataset_keys)
+        assignments = [target_lang.strip()] * len(source_group_keys)
+
+    source_language_by_group = {}
+    for group_key, language in zip(source_group_keys, assignments):
+        source_language_by_group.setdefault(group_key, language)
 
     # Create output directory if it doesn't exist
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -168,8 +196,11 @@ def wrap_jsonl_data(
         sys.exit(1)
 
     print(f"Successfully processed {processed_lines} lines from '{input_file}' to '{output_file}'")
-    counts = {language: assignments.count(language) for language in dict.fromkeys(assignments)}
-    print(f"Target language counts: {counts}")
+    task_counts = {language: assignments.count(language) for language in dict.fromkeys(assignments)}
+    source_languages = list(source_language_by_group.values())
+    source_counts = {language: source_languages.count(language) for language in dict.fromkeys(source_languages)}
+    print(f"Target language task counts: {task_counts}")
+    print(f"Target language source counts: {source_counts}")
 
 
 def main():

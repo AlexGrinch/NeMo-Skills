@@ -8,7 +8,7 @@
 # }
 #
 # formatting constraints:
-#   - translate every non-empty string value present in each messages entry
+#   - translate every non-empty string value present in the provided message field
 #   - keep the same top-level keys, message count, per-message keys, and nested list/object shape
 #   - do not add role, metadata, translation, or any other fields
 #   - preserve <<ESC:...>> placeholders exactly as-is
@@ -18,7 +18,7 @@ system: You are an experienced translator that translates text accurately into f
 user: |-
   You need to translate {source_lang} text to {target_lang}.
 
-  The input is a JSON object containing a "messages" list. Each message object contains only text fields that should be translated. Empty message objects are placeholders that preserve message positions.
+  The input is a JSON object containing a "messages" list. In this pipeline it usually contains one message object with one text field, such as "content" or "reasoning_content". Translate only the string values present in this input object.
 
   Please follow these formatting rules:
 

@@ -95,7 +95,7 @@ Important fields:
 - `language_seed`: optional seed (default `0`) used to reproducibly shuffle weighted language assignments.
 - `fields_to_translate`: fields that should be replaced in the final merged output. Optional when `from_messages: true`.
 - `fields_to_consider`: fields shown to the model. Defaults to `fields_to_translate`. Ignored in the default `from_messages` flow.
-- `from_messages`: when true, the pipeline extracts translatable text fields from `.messages`, sends only that concise message payload to the model, and merges translated values back into the original records. Output records preserve the same fields as the input records; only text inside `.messages` changes.
+- `from_messages`: when true, the pipeline extracts translatable text fields from `.messages`, sends each message text field as a separate translation request, and merges translated values back into the original records. Output records preserve the same fields as the input records; only text inside `.messages` changes.
 - `message_text_fields`: optional list of message field names to translate with `from_messages`. By default this includes `content`, `reasoning_content`, `text`, `refusal`, and any field ending in `_content`.
 - `pipeline_stages`: default ordered stage sequence.
 - `stages.<stage_name>`: per-stage overrides.
@@ -124,7 +124,7 @@ Default output:
 {base_output_dir}/make_concise/concise.jsonl
 ```
 
-If `from_messages: true`, this stage emits a concise `{"messages": [...]}` object that preserves message indexes and keeps only translatable message text fields. Empty message objects are retained as placeholders so merging can preserve the original message order.
+If `from_messages: true`, this stage emits one concise row per non-empty translatable message text field. For example, one source record with `messages[0].content`, `messages[1].content`, and `messages[1].reasoning_content` becomes three translation rows. Each row carries `_translation_source_index`, `_translation_message_index`, and `_translation_message_field` metadata outside the model-visible `src` payload.
 
 ### `wrap`
 
@@ -134,7 +134,7 @@ Wraps each concise record as translation prompt input:
 {"source_lang": "English", "target_lang": "Simplified Chinese", "src": "{...}"}
 ```
 
-With `target_langs`, every record still has exactly one `target_lang`, and the weighted split is applied independently to every unique `_translation_dataset_id`. For example, each dataset containing 100 rows and weights `0.4/0.3/0.2/0.1` produces 40 German, 30 French, 20 Russian, and 10 Japanese prompts in a seed-controlled shuffled order. Records without a dataset ID are treated as one additional group. For group sizes that do not divide cleanly, largest-remainder allocation gives the closest integer counts. The legacy single-language `target_lang` config remains supported.
+With `target_langs`, every source record still has exactly one `target_lang`, and the weighted split is applied independently to every unique `_translation_dataset_id`. In `from_messages` mode, all split message-field rows from the same source record receive the same target language. For example, each dataset containing 100 source records and weights `0.4/0.3/0.2/0.1` produces 40 German, 30 French, 20 Russian, and 10 Japanese source records in a seed-controlled shuffled order. Records without a dataset ID are treated as one additional group. For group sizes that do not divide cleanly, largest-remainder allocation gives the closest integer counts. The legacy single-language `target_lang` config remains supported.
 
 Default output:
 
@@ -349,7 +349,7 @@ stages:
     generation_file: /optional/custom/generation.jsonl
 ```
 
-If `from_messages: true`, translated values from the generated `messages` payload are merged back into the original `messages` array by index and field name. All other top-level fields and non-translated message fields are copied from the original record unchanged. Otherwise top-level fields listed in `fields_to_translate` are updated.
+If `from_messages: true`, consecutive generation rows from the same source record are grouped, and translated values from each generated `messages` payload are merged back into the original `messages` array by source index, message index, and field name. All other top-level fields and non-translated message fields are copied from the original record unchanged. Otherwise top-level fields listed in `fields_to_translate` are updated.
 
 For message-style translation, use:
 

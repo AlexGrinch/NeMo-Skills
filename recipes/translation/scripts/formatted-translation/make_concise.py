@@ -22,10 +22,14 @@ Fields prefixed with _translation_ are pipeline metadata. Downstream stages
 carry them outside the model-visible source payload.
 
 The ID is a SHA-256 hash (first 16 hex chars) of the canonically serialized
-original record (sorted keys, no extra whitespace).  Two records with identical
-content always get the same ID, which is fine — their translations will be
-identical too.  The ID is used by downstream steps (filter_and_merge) to join
-translations back to original records without relying on line alignment.
+original record (sorted keys, no extra whitespace). _translation_source_index
+disambiguates records with identical content and groups split translation rows
+from the same source record.
+
+When --from-messages is used, one concise row is emitted for each non-empty
+translatable message text field, such as content or reasoning_content. This
+keeps each translation prompt bounded to a single message field instead of a
+whole conversation.
 
 Usage:
     python make_concise.py --input data.jsonl --output concise.jsonl --fields problem generation
@@ -97,24 +101,34 @@ def extract_message_text_fields(message: dict, message_text_fields: set[str] | N
     return extracted
 
 
-def extract_from_messages(record: dict, fields: list[str], message_text_fields: set[str] | None = None) -> dict:
-    """Extract all configured translatable text fields from messages.
+def extract_from_messages(record: dict, fields: list[str], message_text_fields: set[str] | None = None) -> list[dict]:
+    """Extract one translation task per configured text field in messages.
 
-    Message indexes are preserved so translated values can be merged back into
-    the original record without changing any non-message or non-text fields.
     ``fields`` is accepted for CLI compatibility but is not used in this mode.
     """
     messages = record.get("messages", [])
-    concise = {"messages": []}
-    if not isinstance(messages, list):
-        return concise
+    tasks = []
+    if isinstance(messages, list):
+        for message_index, message in enumerate(messages):
+            if not isinstance(message, dict):
+                continue
+            for key, value in message.items():
+                if not is_message_text_field(key, message_text_fields):
+                    continue
+                extracted_value = extract_translatable_value(value, message_text_fields)
+                if extracted_value is None:
+                    continue
+                tasks.append(
+                    {
+                        "messages": [{key: extracted_value}],
+                        "_translation_message_index": message_index,
+                        "_translation_message_field": key,
+                    }
+                )
 
-    for message in messages:
-        if isinstance(message, dict):
-            concise["messages"].append(extract_message_text_fields(message, message_text_fields))
-        else:
-            concise["messages"].append({})
-    return concise
+    if not tasks:
+        tasks.append({"messages": [{}], "_translation_noop": True})
+    return tasks
 
 
 def make_concise_file(
@@ -129,7 +143,7 @@ def make_concise_file(
     Path(output_file).parent.mkdir(parents=True, exist_ok=True)
     message_text_field_set = set(message_text_fields) if message_text_fields is not None else None
 
-    total = skipped = 0
+    total = skipped = valid_records = output_records = 0
     with open(input_file, encoding="utf-8") as fin, open(output_file, "w", encoding="utf-8") as fout:
         for line_num, raw_line in enumerate(fin, 1):
             line = raw_line.strip()
@@ -145,26 +159,34 @@ def make_concise_file(
                     print(f"Line {line_num}: skipped (invalid JSON)", file=sys.stderr)
                 continue
 
+            source_index = valid_records
+            valid_records += 1
+
             if from_messages:
-                concise = extract_from_messages(record, fields, message_text_field_set)
+                concise_records = extract_from_messages(record, fields, message_text_field_set)
             else:
                 missing = [k for k in fields if k not in record]
                 if missing and verbose:
                     print(f"Line {line_num}: missing fields {missing}", file=sys.stderr)
-                concise = {k: record[k] for k in fields if k in record}
+                concise_records = [{k: record[k] for k in fields if k in record}]
 
-            if add_src_id:
-                concise["_translation_src_id"] = compute_src_id(record)
-
+            src_id = compute_src_id(record) if add_src_id else None
             metadata = record.get("metadata")
-            if isinstance(metadata, dict) and "dataset" in metadata:
-                concise["_translation_dataset_id"] = metadata["dataset"]
+            dataset_id = metadata.get("dataset") if isinstance(metadata, dict) and "dataset" in metadata else None
 
-            fout.write(json.dumps(concise, ensure_ascii=False) + "\n")
+            for concise in concise_records:
+                if add_src_id:
+                    concise["_translation_src_id"] = src_id
+                    concise["_translation_source_index"] = source_index
+                if dataset_id is not None:
+                    concise["_translation_dataset_id"] = dataset_id
+
+                fout.write(json.dumps(concise, ensure_ascii=False) + "\n")
+                output_records += 1
 
     if skipped:
         print(f"Warning: skipped {skipped}/{total} lines (invalid JSON).", file=sys.stderr)
-    print(f"Wrote {total - skipped} concise records to '{output_file}'.")
+    print(f"Wrote {output_records} concise records from {valid_records} source records to '{output_file}'.")
 
 
 def main():
@@ -184,7 +206,7 @@ def main():
     parser.add_argument(
         "--from-messages",
         action="store_true",
-        help="Extract translatable text fields from the messages array instead of top-level keys",
+        help="Extract one translation task per translatable message text field instead of top-level keys",
     )
     parser.add_argument(
         "--message-text-fields",
